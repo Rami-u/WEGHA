@@ -761,7 +761,7 @@ Unique on `(analysis_id, topic_id)`.
 
 ### 5.22 `proctoring_events`
 
-> **OUT OF SCOPE FOR THIS ROUND - contract only.** Do not create this model or its migration. It stays here so the AI team can build against it later.
+> **Implemented in Stage 9** (`apps/proctoring`). This section is now the live contract.
 
 Signals are for staff review and do not make an automatic cheating verdict.
 
@@ -771,17 +771,17 @@ Signals are for staff review and do not make an automatic cheating verdict.
 | `workspace_id` | Required FK to `workspaces` (`PROTECT`) | Tenant owner |
 | `attempt_id` | Required FK to `exam_attempts` | Related attempt |
 | `student_id` | Required FK to `users` | Student observed |
-| `event_type` | `tab_switch`, `face`, `audio`, `copy`, and defined additions | Signal category |
-| `severity` | `info`, `warning`, `high` | Signal severity |
+| `event_type` | `face_missing`, `multiple_faces`, `looking_away`, `phone_detected`, `tab_switch` (the defined additions; `audio` and `copy` are not produced yet) | Signal category |
+| `severity` | `info`, `warning`, `high`; set by the server: `face_missing` warning, `multiple_faces` high, `looking_away` info, `phone_detected` high, `tab_switch` warning (first guess, lead to confirm) | Signal severity |
 | `occurred_at` | Indexed timestamp | Event time |
-| `details` | Nullable JSON | Structured event metadata |
+| `details` | Nullable JSON: `duration_seconds`, `confidence` (null for browser events) | Structured event metadata |
 | `review_status` | `pending`, `dismissed`, `violation` | Staff decision |
 | `reviewed_by` | Nullable FK to `users` | Reviewer |
 | `reviewed_at` | Nullable timestamp | Review time |
 
 ### 5.23 `proctoring_evidence`
 
-> **OUT OF SCOPE FOR THIS ROUND - contract only.** Do not create this model or its migration. It stays here so the AI team can build against it later.
+> **Implemented in Stage 9** (`apps/proctoring`). This section is now the live contract.
 
 | Field | Type / rule | Purpose |
 |---|---|---|
@@ -789,10 +789,10 @@ Signals are for staff review and do not make an automatic cheating verdict.
 | `workspace_id` | Required FK to `workspaces` (`PROTECT`) | Tenant owner |
 | `event_id` | Required FK to `proctoring_events` | Parent event |
 | `evidence_type` | `snapshot`, `video`, `screen`, `audio` | Evidence category |
-| `storage_key` | `varchar(500)`, private | Private object-storage key |
+| `storage_key` | `varchar(500)`, private, unique; never returned by any API | Private object-storage key |
 | `mime_type` | Nullable `varchar(100)` | Media type |
 | `file_size` | Nullable bigint | File size in bytes |
-| `retention_expires_at` | Nullable timestamp | Retention deadline |
+| `retention_expires_at` | Nullable timestamp; set to now + `PROCTORING_EVIDENCE_RETENTION_DAYS` (30) when a snapshot is saved; the `clean_proctoring_evidence` command deletes expired files and rows | Retention deadline |
 | `created_at` | Timestamp | Creation time |
 ## 6. Entity Relationships
 

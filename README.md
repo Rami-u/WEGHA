@@ -16,9 +16,9 @@ Apps live under `backend/apps/`; project settings live under `backend/config/`.
 | `payments` | `payment_submissions`; manual claims, receipts, and review |
 | `assessments` | `topics`, `lesson_topics`, `questions`, `question_topics`, `exams`, `exam_questions`, `exam_attempts`, `answers`; assessment skeleton |
 | `ai` | Empty registered app owned by the AI teammate; deferred table contracts in its README |
-| `proctoring` | Empty registered app owned by the AI teammate; deferred event/evidence contracts in its README |
+| `proctoring` | `proctoring_events`, `proctoring_evidence`; student frame/browser-event endpoints, teacher review, retention command (Stage 9) |
 
-Stage 6 has no endpoints and no uploads. `LessonAsset.storage_key` is a plain string; asset storage, extraction, and access are deferred. AI and proctoring have no models or migrations. Future proctoring events will reference `exam_attempts` in `assessments`.
+Stage 6 has no endpoints and no uploads. `LessonAsset.storage_key` is a plain string; asset storage, extraction, and access are deferred. AI has no models or migrations. Proctoring models and endpoints were added in Stage 9 (see below).
 
 Model `clean()` validates related workspaces, content/course consistency, and the student role on attempts. It runs through Django admin forms and `full_clean()`, but not `objects.create()` or `save()`. Future serializers must retrieve relations from querysets scoped to the current workspace.
 
@@ -295,6 +295,16 @@ Create its table once with `python manage.py createcachetable`. Student throttle
 - Account identifiers are generated as `<workspace-id>:<lowercase-email>` or `admin:<lowercase-email>` for Platform Admins.
 - New accounts default to pending approval; teacher accounts and Platform Admins created through the manager are approved.
 - DRF uses session authentication, requires authentication by default, and has page-number pagination with 20 items per page.
+
+## Proctoring (Stage 9)
+
+Details and the endpoint list are in `backend/apps/proctoring/README.md`. Proctoring gives signals to the workspace teacher; it never decides that a student cheated.
+
+- **Vision backend:** `PROCTORING_VISION_BACKEND=fake` (the default in `backend/.env.example`) accepts frames and detects nothing. The real vision code is not connected yet and needs the lead's written approval for `cv2`, `mediapipe` and `numpy` before it can be switched on. Do not change the setting without that approval.
+- **One worker only:** the real vision pipeline reportedly keeps session state in process memory, so run a single server worker until the lead decides how to share that state.
+- **Settings** (`backend/.env.example`): `PROCTORING_VISION_BACKEND`, `PROCTORING_FRAME_MAX_BYTES` (default 512000), `PROCTORING_FRAME_MAX_PIXELS` (default 4000000), `PROCTORING_EVIDENCE_RETENTION_DAYS` (default 30). Throttle scopes: `proctoring_frame` 120/minute, `proctoring_browser_event` 30/minute.
+- **Retention command:** from `backend/`, `python manage.py clean_proctoring_evidence --dry-run` prints how many evidence rows are expired and deletes nothing; without `--dry-run` it deletes the expired files and rows and keeps the events. A missing file is counted, not fatal; a file that cannot be deleted keeps its row for the next run. Run it daily from a scheduler.
+- **Tests:** `python manage.py test apps.proctoring --noinput`.
 
 ## Team documents
 

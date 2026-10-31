@@ -11,7 +11,7 @@ It is **not a copy of the design** and **not a log of everything done**: keep it
 - Backend only for now: Django + Django REST Framework + PostgreSQL, session authentication.
 - Roles: Platform Admin (no workspace), teacher, student (assistant is planned, not active).
 - Flow: admin creates a teacher and workspace, students register and wait for approval, then enroll in free or paid courses (manual payment confirmed by the teacher).
-- AI quiz generation, mistake analysis, and proctoring are planned for later and are **not built** in this round.
+- AI quiz generation and mistake analysis are planned for later and are **not built**. Proctoring (signals for teacher review, never a verdict) is built in Stage 9 with a fake vision backend only.
 
 ## 2. Files and when to read them
 
@@ -47,8 +47,8 @@ It is **not a copy of the design** and **not a log of everything done**: keep it
 ## 4. Scope reminder
 
 - **Built this round:** Stages 1-5 working with tests; Stage 6 as models-only skeleton; the stage-8 branch adds the attempts API and manual exam content (topics, questions, exams, student exam list, `seed_demo_data`).
-- **Not built, do not add:** frontend, deployment, AI generation, mistake analysis, proctoring, assistant permissions, email verification, online payments, refunds, endpoints for sections, lessons, and assets.
-- **Placeholders:** `apps/ai/` and `apps/proctoring/` are empty (README only).
+- **Not built, do not add:** frontend, deployment, AI generation, mistake analysis, the real vision backend, assistant permissions, email verification, online payments, refunds, endpoints for sections, lessons, and assets.
+- **Placeholders:** `apps/ai/` is empty (README only). `apps/proctoring/` is built in Stage 9.
 
 ## 5. Status
 Update the row of the stage you worked on. Statuses: `not started`, `in progress`, `done - awaiting review`, `merged`.
@@ -61,7 +61,8 @@ Update the row of the stage you worked on. Statuses: `not started`, `in progress
 | 4 | Student registration, login, approval | merged (PR #6) | stage-4-student-auth | - |
 | 5 | Courses, enrollment, manual payments | merged (PR #8) | stage-5-courses-payments | - |
 | 6 | Content and assessment skeleton | done - awaiting review | stage-6-skeleton | - |
-| 8 | Attempts API, manual exam content without AI, seed command (stage number to be confirmed by the lead) | in progress (PR #10) | stage-8-proctoring-attempts | lead |
+| 8 | Attempts API, manual exam content without AI, seed command | in progress (PR #10) | stage-8-proctoring-attempts | lead |
+| 9 | Proctoring integration: A core/data, B student side, C teacher side/docs | in progress | stage-9-proctoring-integration (+ `-a`/`-b`/`-c`) | lead |
 
 ## 6. Repository map
 Fill this in as apps are created. One row per app, kept to one line each.
@@ -76,7 +77,7 @@ Fill this in as apps are created. One row per app, kept to one line each.
 | payments | Manual payment claims, receipts, review, and enrollment activation | `PaymentSubmission` | Submit claim, list, view receipt, confirm, reject (`workspaces/{slug}/payments/`) | 5 |
 | assessments | Question bank, topics, exams, attempts, and answers | `Topic`, `LessonTopic`, `Question`, `QuestionTopic`, `Exam`, `ExamQuestion`, `ExamAttempt`, `Answer` | `workspaces/{slug}/topics/`, `questions/` (+ approve, reject, archive), `exams/` (+ questions, publish, archive; student list), `exams/{id}/attempts/start/`, `attempts/{id}/` and `/submit/` | 6, 8 |
 | ai | Empty registered app; AI teammate owns future generation and analysis contracts in README | None | None | 6 |
-| proctoring | Empty registered app; AI teammate owns future signals/evidence contracts; events will reference `assessments.ExamAttempt` | None | None | 6 |
+| proctoring | Signals for teacher review: events, snapshots, consent, close hook, vision adapter (fake only), retention | `ProctoringEvent`, `ProctoringEvidence` | Student: frame and browser event under `attempts/{id}/`; teacher: `attempts/{id}/proctoring/events/`, `proctoring/events/{id}/` (+ `review/`), `proctoring/evidence/{id}/file/` | 9 |
 
 ## 7. Reusable building blocks
 The patterns the team will copy. Record where each one lives so nobody rewrites it.
@@ -107,6 +108,8 @@ The patterns the team will copy. Record where each one lives so nobody rewrites 
 | Temporary media test mixin | `backend/apps/payments/tests/helpers.py` | `TemporaryMediaMixin` isolates media uploads to a clean temporary directory during test runs |
 | Course, enrollment, payment test helpers | `backend/apps/courses/tests/helpers.py`, `backend/apps/enrollments/tests/helpers.py`, `backend/apps/payments/tests/helpers.py` | Create courses, enrollments, and payment submissions for test suites |
 | Related-workspace validator | `backend/apps/workspaces/tenancy.py` | `validate_same_workspace(instance,*field_names)` rejects each mismatched FK with a field-keyed validation error |
+| Proctoring services, close hook, test helpers | `backend/apps/proctoring/services.py`, `backend/apps/assessments/attempt_services.py` (`_close_attempt`), `backend/apps/proctoring/tests/helpers.py` | `record_event`, `save_snapshot`, `finish_proctoring_safely`; `create_proctoring_event`, `create_proctoring_evidence` |
+| Teacher review service and evidence file view | `backend/apps/proctoring/review_services.py`, `backend/apps/proctoring/teacher_views.py` | Locked, single-use `review_event`; private evidence streaming copied from the receipt pattern |
 | Content and assessment test helpers | `backend/apps/courses/tests/helpers.py`, `backend/apps/assessments/tests/helpers.py` | Reuse `create_section`, `create_lesson`, `create_lesson_asset`, `create_topic`, `create_question`, `create_exam`, `create_exam_attempt`, `create_answer` with existing account/course helpers |
 | Question content validation, exam services, demo seed | `backend/apps/assessments/question_validation.py`, `question_services.py`, `exam_services.py`, `seed_data/`, `management/commands/seed_demo_data.py` | One validator for `options` and `correct_answer`; services lock rows and run in one transaction; the seed reuses them and is dev-only and idempotent |
 
@@ -163,12 +166,14 @@ One line each: what you decided, why, and the stage. The reviewer checks this li
 - Stage 8: once an exam is published and has attempts, duration, passing score, proctoring flag and question list return 409; `max_attempts` can only increase; `lesson` is locked after publishing; archived exams are read-only. A question used by an exam with attempts has frozen content.
 - Stage 8: students see only published exams in courses with an active enrollment, never questions or `passing_score`; an unavailable exam returns 404. Files are named `question_*` and `exam_*` instead of the suggested `content_*`.
 - Stage 8: `seed_demo_data` runs only with `DEBUG=True`, reads the password from `--password` or `DEMO_USER_PASSWORD`, never prints it, and skips rows that already exist.
+- Stage 9 (C): a teacher's review changes only the event; `ExamAttempt.proctoring_review_status` is never touched (lead's answer to spec question 7 is pending). A second review is 409, an attempt outside the workspace is 404, an invalid filter is 400, and evidence outside JPEG/PNG downloads as `application/octet-stream`.
+- Stage 9 (A/B): consent is stored once in `consent_given_at` and not exposed; the close hook runs after commit only for proctored exams and never blocks a submit; the severity map and the `details` keys (`duration_seconds`, `confidence`) are first guesses awaiting the lead.
 
 ## 9. Deferred to later rounds
 
 - Endpoints for course sections, lessons, and lesson assets (the design has none yet).
 - Delivering questions during an attempt, saving answers, and grading (starting an attempt already needs an active enrollment).
-- AI question generation, mistake analysis, and proctoring.
+- AI question generation, mistake analysis, the real vision backend (needs written approval for `cv2`/`mediapipe`/`numpy`), video/screen/audio evidence.
 - Assistant permissions.
 - React frontend and sub-domain deployment.
 - Email verification, refunds, receipt retention, online payments.
@@ -177,9 +182,8 @@ One line each: what you decided, why, and the stage. The reviewer checks this li
 From the repository root in PowerShell: `py -3.14 -m venv .venv`; `.\.venv\Scripts\Activate.ps1`; `python -m pip install -r backend\requirements.txt`; `Copy-Item backend\.env.example backend\.env`; `psql -U postgres -c "CREATE DATABASE educational_platform;"`; `Set-Location backend`; `python manage.py migrate`; `python manage.py createsuperuser`; `python manage.py runserver`.
 
 Verify a stage: from `backend/` with virtualenv active, run `python manage.py check`, `python manage.py makemigrations --check --dry-run`, `python manage.py spectacular --validate`, and `python manage.py test`.
-Stage 3 verification: 49 tests passed. Stage 4 verification: 97 tests passed.
-Stage 5 verification from `backend/`: `python manage.py check`; `python manage.py makemigrations --check --dry-run`; `python manage.py spectacular --validate` (no warnings); `python manage.py test` (231 tests passed).
-Stage 6 verification (Python 3.14.4), from `backend/`: `python manage.py migrate --noinput`; `python manage.py check`; `python manage.py makemigrations --check --dry-run`; `python manage.py spectacular --validate --fail-on-warn` (no warnings); `python manage.py test --noinput --parallel 4` (346 passed; 231 before). Schema/docs GET 200; 22 source and 6 DB mutations caught/restored; private_media files 121 before/121 after, public_media 1 before/1 after; ai/proctoring have no migrations.
+Earlier stages: 49 (Stage 3), 97 (Stage 4), 231 (Stage 5) and 346 (Stage 6) tests passed with the same checks.
+Proctoring: `python manage.py test apps.proctoring --noinput`; `python manage.py clean_proctoring_evidence --dry-run`.
 Stage 8 verification, from `backend/` on commit e7af32f: `check`, `makemigrations --check --dry-run`, `spectacular --validate --fail-on-warn` clean; `python manage.py test --noinput --parallel 4` (573 passed; no migrations added).
 
 ## 11. Known problems
@@ -190,18 +194,18 @@ Stage 8 verification, from `backend/` on commit e7af32f: `check`, `makemigration
 - Password-reset responses have the same body for known and unknown emails, but response time can still reveal account existence because email is sent in the request; move reset email delivery to a background task later.
 - Development serves logos only when `DEBUG=True`; production needs a web server mapping `/media/` to `backend/public_media`.
 - Replacing a workspace logo does not delete the old file, so orphan logo files accumulate; this is known and not fixed here.
-- Old receipt files stay on disk after a rejected claim is resubmitted.
-- A claim submission that loses a race on the unique constraint can leave an unreferenced receipt file on disk.
-- The PDF check is signature-only.
-- The JPEG check validates only the header (Pillow verify() does nothing for JPEG), so a truncated JPEG with a valid header is accepted.
+- Receipt files can be orphaned on disk: after a rejected claim is resubmitted, or when a submission loses a race on the unique constraint.
+- Receipt checks are shallow: PDF is signature-only and JPEG is header-only (a truncated JPEG with a valid header is accepted).
 - apps/workspaces/image_validators.py (Stage 3) catches only (UnidentifiedImageError, OSError, ValueError), but corrupt uploads (such as PNG without IDAT or minimal DDS) on the logo endpoint return 400 because DRF's ImageField parser catches them first; Stage 3 is not being retroactively modified because its branch is merged.
 - Unpublishing a course does not change existing enrollments and enrollments/me still lists them.
 - `MEDIA_URL="/media/"` while `MEDIA_ROOT` remains `backend/private_media`; only `backend/public_media` is served. Stage 5 receipts must use their own private storage and the authorized endpoint, never `.url` or `MEDIA_URL`.
 - Throttle counters are per-process until a shared cache is configured (see docs/deployment.md).
 - Stage 6 `clean()` runs in Django admin and `full_clean()`, not `objects.create()` or `save()`; future serializers must scope relation querysets (AGENTS.md section 6, pattern 2).
 - LessonAsset has no storage yet: storage_key is a plain CharField(500), with no upload, extraction, or serving implementation. Section 4's README-only placeholder wording is preserved as requested; the registered empty app packages are documented in section 6.
-- Receipt tests need write access to the system temporary directory; a restricted run raised PermissionError, while the final full suite passed with normal temporary-file access. No application change was needed.
-- Stage 8: a null `duration_minutes` means 180 minutes (`DEFAULT_DURATION_MINUTES`), consent is validated but not stored, and expired in-progress attempts stay `in_progress` until someone calls start; these are open questions for the lead.
+- Stage 8: a null `duration_minutes` means 180 minutes (`DEFAULT_DURATION_MINUTES`) and expired in-progress attempts stay `in_progress` until someone calls start (the frame endpoint checks the deadline); both are open questions for the lead.
+- Stage 9 route collision: Track B's browser-event route `attempts/{id}/proctoring/events/` (POST) is the same path as Track C's teacher list (GET), and student URLs are included first, so teachers get 403 on the list until B moves it (spec: `browser-events/`). B's frame endpoint also differs from the spec (`proctoring/frame/`, field `frame`, response `events_recorded`). Not fixed by C; reported to A/B. On branch `-c` the full suite ran 660 tests: 650 passed, the 10 failures are all C routes hit by this collision.
+- Stage 9 vision facts are reported by Tracks A/B from `ai-development`, not verified by C: `phone_detector` is real; `finish_session` may raise `TimeoutError` (handled by `finish_proctoring_safely`); `dropped=True` with `reason="session_lock_timeout"` is not an error; `exam_terminated` is ignored (no automatic decision); the session store is in memory (one worker; Redis needs the lead's approval); whether `opened` events carry a duration and the Pillow 13.0.0 vs 12.3.0 conflict are unconfirmed.
+- Stage 9: the severity map is a first guess, and events saved at close have no snapshot.
 
 ## 12. Production deployment checklist
 
