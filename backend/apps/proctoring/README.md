@@ -2,6 +2,13 @@
 
 Proctoring produces **signals for staff review**, never an automatic cheating verdict (design section 1). The code never writes `violation` or changes `ExamAttempt.proctoring_review_status`; only a teacher decides.
 
+## Student endpoints
+
+| Method and path | Purpose |
+|---|---|
+| `POST attempts/{id}/proctoring/frame/` | Upload a proctoring frame |
+| `POST attempts/{id}/browser-events/` | Record a browser proctoring event |
+
 ## What exists (Stage 9)
 
 | Part | File | Owner |

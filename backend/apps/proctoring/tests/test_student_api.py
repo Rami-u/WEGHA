@@ -72,7 +72,7 @@ class StudentProctoringApiTests(APITestCase):
 
     def event_url(self, attempt=None, slug="alpha"):
         attempt = attempt or self.attempt
-        return f"/api/v1/workspaces/{slug}/attempts/{attempt.pk}/proctoring/events/"
+        return f"/api/v1/workspaces/{slug}/attempts/{attempt.pk}/browser-events/"
 
     def image_upload(self, content=b"image-bytes", name="frame.jpg", mime="image/jpeg"):
         return SimpleUploadedFile(name, content, content_type=mime)

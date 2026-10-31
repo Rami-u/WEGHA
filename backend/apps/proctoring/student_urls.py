@@ -10,7 +10,7 @@ urlpatterns += [
         name="proctoring-frame-upload",
     ),
     path(
-        "workspaces/<slug:slug>/attempts/<int:attempt_id>/proctoring/events/",
+        "workspaces/<slug:slug>/attempts/<int:attempt_id>/browser-events/",
         BrowserEventView.as_view(),
         name="proctoring-browser-event",
     ),
