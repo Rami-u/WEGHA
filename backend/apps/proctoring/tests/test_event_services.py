@@ -105,3 +105,8 @@ class EventServiceTests(base.AttemptApiBase):
         event = record_event(self.attempt, fake_detected(False))
         evidence = save_snapshot(event, b"xyz", "application/octet-stream")
         self.assertTrue(evidence.storage_key.endswith(".bin"))
+    def test_details_have_source_vision_by_default_and_browser_when_given(self):
+        vision = record_event(self.attempt, fake_detected())
+        browser = record_event(self.attempt, fake_detected(), source="browser")
+        self.assertEqual(vision.details["source"], "vision")
+        self.assertEqual(browser.details["source"], "browser")

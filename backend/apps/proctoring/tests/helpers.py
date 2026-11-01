@@ -25,3 +25,12 @@ def create_proctoring_evidence(workspace, event, **fields):
     fields.setdefault("mime_type", "image/jpeg")
     fields.setdefault("file_size", 1024)
     return ProctoringEvidence.objects.create(workspace=workspace, event=event, **fields)
+
+def make_image_bytes(fmt="JPEG", size=(8, 8)):
+    import io
+
+    from PIL import Image
+
+    buffer = io.BytesIO()
+    Image.new("RGB", size).save(buffer, format=fmt)
+    return buffer.getvalue()

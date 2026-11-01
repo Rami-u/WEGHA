@@ -93,7 +93,7 @@ def save_snapshot(event, image_bytes, mime):
         raise
 
 
-def record_event(attempt, detected, image_bytes=None, mime="image/jpeg"):
+def record_event(attempt, detected, image_bytes=None, mime="image/jpeg", source="vision"):
     """Save one proctoring event, and a snapshot if one was asked for.
 
     A snapshot failure never loses the event. Only ids are logged.
@@ -106,6 +106,7 @@ def record_event(attempt, detected, image_bytes=None, mime="image/jpeg"):
         severity=_severity_for(detected.event_type),
         occurred_at=detected.occurred_at,
         details={
+            "source": source,
             "duration_seconds": detected.duration_seconds,
             "confidence": detected.confidence,
         },
