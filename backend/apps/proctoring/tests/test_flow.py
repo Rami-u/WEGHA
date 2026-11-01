@@ -20,12 +20,13 @@ from apps.enrollments.models import CourseEnrollment
 from apps.enrollments.tests.helpers import create_enrollment
 from apps.payments.tests.helpers import TemporaryMediaMixin
 from apps.proctoring.models import ProctoringEvent
+from apps.proctoring.tests.helpers import make_image_bytes
 from apps.proctoring.vision_adapter import DetectedEvent
 from apps.assessments.tests.helpers import create_exam
 
-FRAME_BYTES = b"\xff\xd8\xff\xe0scripted-frame"
+FRAME_BYTES = make_image_bytes()
 # Name of the multipart field of Track B's frame endpoint.
-FRAME_FIELD = "frame"
+FRAME_FIELD = "image"
 
 
 class ScriptedVisionBackend:

@@ -2,10 +2,9 @@ from django.urls import path
 
 from .student_views import BrowserEventView, FrameUploadView
 
-urlpatterns = []
-urlpatterns += [
+urlpatterns = [
     path(
-        "workspaces/<slug:slug>/attempts/<int:attempt_id>/proctoring/frame/",
+        "workspaces/<slug:slug>/attempts/<int:attempt_id>/frames/",
         FrameUploadView.as_view(),
         name="proctoring-frame-upload",
     ),

@@ -1,16 +1,17 @@
-"""Vision adapter (Track B).
 
-Connects the proctoring services to a vision backend. Only the fake
-backend exists for now. It needs no extra libraries and detects nothing.
-"""
+
+
 
 from dataclasses import dataclass
 from datetime import datetime
 
 from django.conf import settings
 
+
 class InvalidFrameError(ValueError):
     """Raised when the uploaded image cannot be analysed."""
+
+
 @dataclass
 class DetectedEvent:
     event_type: str
@@ -22,7 +23,7 @@ class DetectedEvent:
 
 # Every ProctoringEvent.EventType must be listed here, or record_event
 # raises KeyError. The severity values are a first guess: confirm them
-# with Track A or the lead.
+# with the lead (open question P5).
 SEVERITY_BY_EVENT_TYPE = {
     "face_missing": "warning",
     "multiple_faces": "high",
@@ -30,6 +31,9 @@ SEVERITY_BY_EVENT_TYPE = {
     "phone_detected": "high",
     "tab_switch": "warning",
 }
+
+# Browser signal name sent by the frontend -> stored event type (spec P4).
+BROWSER_EVENT_TYPES = {"tab_hidden": "tab_switch"}
 
 
 class FakeVisionBackend:
