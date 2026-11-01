@@ -16,9 +16,9 @@ Apps live under `backend/apps/`; project settings live under `backend/config/`.
 | `payments` | `payment_submissions`; manual claims, receipts, and review |
 | `assessments` | `topics`, `lesson_topics`, `questions`, `question_topics`, `exams`, `exam_questions`, `exam_attempts`, `answers`; assessment skeleton |
 | `ai` | Empty registered app owned by the AI teammate; deferred table contracts in its README |
-| `proctoring` | Empty registered app owned by the AI teammate; deferred event/evidence contracts in its README |
+| `proctoring` | `proctoring_events`, `proctoring_evidence`; student frame/browser-event endpoints, teacher review, retention command (Stage 9) |
 
-Stage 6 has no endpoints and no uploads. `LessonAsset.storage_key` is a plain string; asset storage, extraction, and access are deferred. AI and proctoring have no models or migrations. Future proctoring events will reference `exam_attempts` in `assessments`.
+Stage 6 has no endpoints and no uploads. `LessonAsset.storage_key` is a plain string; asset storage, extraction, and access are deferred. AI has no models or migrations. Proctoring models and endpoints were added in Stage 9 (see below).
 
 Model `clean()` validates related workspaces, content/course consistency, and the student role on attempts. It runs through Django admin forms and `full_clean()`, but not `objects.create()` or `save()`. Future serializers must retrieve relations from querysets scoped to the current workspace.
 
@@ -115,6 +115,46 @@ python manage.py runserver
 ```
 
 The local example disables the Secure cookie flag so browser sessions work over `runserver`'s plain HTTP. Production must set `DJANGO_SESSION_COOKIE_SECURE=True`; the setting also defaults to `True` when unset.
+
+## Seeding demo data (development only)
+
+`seed_demo_data` fills a development database with a demo chemistry workspace so the exam content API can be tried by hand. It runs only when `DEBUG` is true and refuses to run otherwise. It does not touch proctoring or AI tables.
+
+Run it from `backend` with the virtual environment active:
+
+```powershell
+python manage.py seed_demo_data --password "choose-a-demo-password"
+```
+
+You can also set the password in the `DEMO_USER_PASSWORD` environment variable instead of passing `--password`. The password is never printed.
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--password` | none | Password for the demo teacher and students |
+| `--workspace-slug` | `demo-chem` | Slug of the demo workspace |
+| `--students` | `5` | Number of demo students |
+
+The command creates:
+
+- Workspace `demo-chem` ("Demo Chemistry", active).
+- Teacher `teacher@demo.local` and approved students `student1@demo.local`, `student2@demo.local`, and so on, each with an active enrollment in the course.
+- A published course, "Organic Chemistry 101", with sections, lessons, topics, and 24 approved questions.
+- Three exams:
+
+| Exam | Duration | Max attempts | Proctoring | State |
+|---|---|---|---|---|
+| Quiz 1: Alkanes and Alkenes | 20 min | 2 | off | published |
+| Midterm: Aromatic compounds | 30 min | 1 | on | published (passing score 60) |
+| Draft exam | 15 min | 1 | off | draft, so publishing can be tested by hand |
+
+The command is idempotent: running it again reuses existing records and skips an exam that already exists without changing it. It prints a summary of the emails and exams when it finishes.
+
+### Trying it by hand
+
+1. Sign in as a student at `POST /api/v1/workspaces/demo-chem/auth/login/`, or as the teacher at `POST /api/v1/workspaces/demo-chem/staff/auth/login/`. Session `POST` requests also need the CSRF token (see "Trying session endpoints by hand" below).
+2. List exams with `GET /api/v1/workspaces/demo-chem/exams/`. Students see only published exams; the teacher also sees the draft.
+3. Start an attempt with `POST /api/v1/workspaces/demo-chem/exams/<id>/attempts/start/`. For Quiz 1 the body is `{}`. The Midterm has proctoring enabled, so its body must be `{"consent": true}`.
+4. As the teacher, publish the draft with `POST /api/v1/workspaces/demo-chem/exams/<id>/publish/`.
 
 ## API documentation
 
@@ -255,6 +295,16 @@ Create its table once with `python manage.py createcachetable`. Student throttle
 - Account identifiers are generated as `<workspace-id>:<lowercase-email>` or `admin:<lowercase-email>` for Platform Admins.
 - New accounts default to pending approval; teacher accounts and Platform Admins created through the manager are approved.
 - DRF uses session authentication, requires authentication by default, and has page-number pagination with 20 items per page.
+
+## Proctoring (Stage 9)
+
+Details and the endpoint list are in `backend/apps/proctoring/README.md`. Proctoring gives signals to the workspace teacher; it never decides that a student cheated.
+
+- **Vision backend:** `PROCTORING_VISION_BACKEND=fake` (the default in `backend/.env.example`) accepts frames and detects nothing. The real vision code is not connected yet and needs the lead's written approval for `cv2`, `mediapipe` and `numpy` before it can be switched on. Do not change the setting without that approval.
+- **One worker only:** the real vision pipeline reportedly keeps session state in process memory, so run a single server worker until the lead decides how to share that state.
+- **Settings** (`backend/.env.example`): `PROCTORING_VISION_BACKEND`, `PROCTORING_FRAME_MAX_BYTES` (default 512000), `PROCTORING_FRAME_MAX_PIXELS` (default 4000000), `PROCTORING_EVIDENCE_RETENTION_DAYS` (default 30). Throttle scopes: `proctoring_frame` 120/minute, `proctoring_browser_event` 30/minute.
+- **Retention command:** from `backend/`, `python manage.py clean_proctoring_evidence --dry-run` prints how many evidence rows are expired and deletes nothing; without `--dry-run` it deletes the expired files and rows and keeps the events. A missing file is counted, not fatal; a file that cannot be deleted keeps its row for the next run. Run it daily from a scheduler.
+- **Tests:** `python manage.py test apps.proctoring --noinput`.
 
 ## Team documents
 
