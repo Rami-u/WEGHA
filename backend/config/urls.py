@@ -1,14 +1,11 @@
 from functools import wraps
-from re import escape
 
 from django.conf import settings
 from django.contrib import admin
 from django.http import Http404
-from django.urls import include, path, re_path
+from django.urls import include, path
 from django.conf.urls.static import static
-from django.views.static import serve as static_serve
 
-from config.spa import spa_view
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 
@@ -27,6 +24,11 @@ urlpatterns += [path("api/v1/", include("apps.public.urls"))]
 urlpatterns += [path("api/v1/", include("apps.courses.urls"))]
 urlpatterns += [path("api/v1/", include("apps.enrollments.urls"))]
 urlpatterns += [path("api/v1/", include("apps.payments.urls"))]
+urlpatterns += [path("api/v1/", include("apps.assessments.attempt_urls"))]
+urlpatterns += [path("api/v1/", include("apps.assessments.content_urls"))]
+urlpatterns += [path("api/v1/", include("apps.assessments.question_urls"))]
+urlpatterns += [path("api/v1/", include("apps.assessments.exam_urls"))]
+urlpatterns += [path("api/v1/", include("apps.proctoring.urls"))]
 urlpatterns += [
     path(
         "api/schema/",
@@ -45,30 +47,3 @@ if settings.DEBUG:
         settings.MEDIA_URL,
         document_root=settings.BASE_DIR / "public_media",
     )
-
-if settings.FRONTEND_DIST:
-    # Single-origin deployment: Django also serves the SPA (below) plus
-    # /media/ (public workspace logos) and /static/ (collected admin files).
-    # The SPA catch-all must stay last so the API, schema/docs, and admin
-    # URLs keep resolving first.
-    reserved = sorted(
-        escape(part)
-        for part in {"api", "static", "media", settings.DJANGO_ADMIN_PATH.strip("/")}
-    )
-    urlpatterns += [
-        re_path(
-            r"^media/(?P<path>.*)$",
-            static_serve,
-            {"document_root": settings.BASE_DIR / "public_media"},
-        ),
-        re_path(
-            r"^static/(?P<path>.*)$",
-            static_serve,
-            {"document_root": settings.STATIC_ROOT},
-        ),
-        re_path(
-            r"^(?!(?:%s)(?:$|/))(?P<path>.*)$" % "|".join(reserved),
-            spa_view,
-            name="spa",
-        ),
-    ]
