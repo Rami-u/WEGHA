@@ -130,7 +130,7 @@ Set `DJANGO_ENABLE_API_DOCS=True` to enable `GET /api/schema/` and `GET /api/doc
 
 Suspended workspaces return `403` with `Workspace is unavailable.` on branding, workspace public-profile, and teacher workspace settings GET/PATCH routes; unknown slugs return `404` with `Workspace not found.`. The public teacher directory omits suspended workspaces and the public teacher profile returns `404`. Public serializers do not include email addresses, passwords, or student counts.
 
-In production, configure the web server to serve `/media/` from `backend/public_media`; Django serves these logos directly only in development.
+In production with a separate frontend host, configure the web server to serve `/media/` from `backend/public_media`; Django serves these logos directly only in development. In the single-origin mode below (`FRONTEND_DIST` set), Django serves `/media/` itself with `django.views.static.serve`, which is fine for a demo preview — for a hardened production deployment prefer a real web server in front of Django per `docs/deployment.md`.
 
 ## Serving the React frontend in production (single origin)
 

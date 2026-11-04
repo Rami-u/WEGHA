@@ -49,11 +49,21 @@ def spa_view(request, path=""):
         if candidate.is_relative_to(root) and candidate.is_file():
             file_to_serve = candidate
 
-    if file_to_serve is not None and path.startswith("assets/"):
-        # Vite emits content-hashed filenames under assets/, safe to cache.
-        return FileResponse(
-            file_to_serve.open("rb"),
-            headers={"Cache-Control": "public, max-age=31536000, immutable"},
-        )
+    if file_to_serve is not None:
+        if path.startswith("assets/"):
+            # Vite emits content-hashed filenames under assets/, safe to cache.
+            return FileResponse(
+                file_to_serve.open("rb"),
+                headers={"Cache-Control": "public, max-age=31536000, immutable"},
+            )
+        # Other build-output files (public/ copies such as fonts and images)
+        # exist in dist but their names may change between deploys: revalidate.
+        return FileResponse(file_to_serve.open("rb"), headers={"Cache-Control": "no-cache"})
+
+    if path.startswith("assets/"):
+        # A missing hashed file must be a real 404, not index.html: a browser
+        # receiving HTML in place of JavaScript after a deploy reports errors
+        # that are impossible to debug.
+        raise Http404("Asset not found.")
 
     return FileResponse(index.open("rb"), headers={"Cache-Control": "no-cache"})
