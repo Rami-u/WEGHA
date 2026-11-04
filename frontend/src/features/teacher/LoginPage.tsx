@@ -3,8 +3,8 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 
 import { loginStaff } from "../../api/staffAuth";
 import { getMe } from "../../api/studentAuth";
-import { Alert, Button, Card, Input, Label } from "../../components/ui";
-import { ThemeToggle } from "../../components/ThemeToggle";
+import { Alert, Button, Input, Label, Spinner } from "../../components/ui";
+import { AuthIcon, AuthPasswordField, WorkspaceAuth } from "../../components/WorkspaceAuth";
 import { useSession } from "../../context/SessionContext";
 import { useApiErrorText } from "../../lib/apiErrorText";
 import { ApiError } from "../../lib/apiClient";
@@ -15,17 +15,19 @@ import { ApiError } from "../../lib/apiClient";
  * generic failure as a wrong password.
  */
 export function TeacherLoginPage() {
-  const { slug, user, setUser, refreshWorkspace, workspace } = useSession();
+  const { slug, user, setUser, refreshWorkspace } = useSession();
   const navigate = useNavigate();
   const errorToText = useApiErrorText();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (submitting) return;
     setSubmitting(true);
     setErrorText(null);
     try {
@@ -46,66 +48,44 @@ export function TeacherLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-page text-ink">
-      <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex h-14 max-w-[1160px] items-center justify-between px-6">
-          <Link to="/" className="text-lg font-extrabold text-ink">
-            {workspace?.name ?? "مساحة المعلّم"}
-          </Link>
-          <ThemeToggle compact />
-        </div>
-      </header>
-
-      <main className="mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center px-6 py-12">
-        <h1 className="text-[30px] font-extrabold leading-[1.4] text-ink">دخول المعلّمين</h1>
-        <p className="mt-1 text-sm leading-[1.8] text-ink-secondary">
-          منطقة خاصة بالمعلّم — الطلاب يستخدمون صفحة الدخول العادية.
-        </p>
-
-        <Card className="mt-6 shadow-elevated">
+    <WorkspaceAuth teacher title="مساحتك، بإدارتك." subtitle="سجّل الدخول بحساب المعلّم لإدارة طلابك ودوراتك في هذه المساحة." eyebrow="دخول المعلّم" panelTitle="كل ما يخصّ تعليمك، في مكان واحد." tips={["راجع طلبات انضمام الطلاب إلى مساحتك.", "نظّم دوراتك وتابع طلبات الدفع.", "حدّث معلومات المساحة وطريقة ظهورها."]}>
           {errorText && (
             <div className="mb-4">
               <Alert tone="error">{errorText}</Alert>
             </div>
           )}
 
-          <form className="space-y-4" onSubmit={submit}>
+          <form onSubmit={submit} aria-busy={submitting}>
+            <fieldset disabled={submitting} className="min-w-0 space-y-5">
             <div>
               <Label htmlFor="staff-email">البريد الإلكتروني</Label>
               <Input
                 id="staff-email"
                 type="email"
+                name="email"
+                autoComplete="email"
+                placeholder="name@example.com"
+                className="h-12 text-start"
                 dir="ltr"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 required
                 invalid={Boolean(errorText)}
+                aria-invalid={Boolean(errorText)}
               />
             </div>
-            <div>
-              <Label htmlFor="staff-password">كلمة المرور</Label>
-              <Input
-                id="staff-password"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? "جارٍ الدخول..." : "دخول"}
+            <AuthPasswordField id="staff-password" label="كلمة المرور" autoComplete="current-password" value={password} onChange={setPassword} visible={showPassword} onToggle={() => setShowPassword((value) => !value)} />
+            <Link to="/teacher/set-password" className="inline-block text-xs font-semibold text-accent hover:underline">نسيت كلمة المرور؟</Link>
+            <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+              {submitting ? <><Spinner className="h-4 w-4" />جارٍ الدخول...</> : <>الدخول إلى لوحة المعلّم<AuthIcon name="arrow" /></>}
             </Button>
+            </fieldset>
           </form>
-        </Card>
-
-        <p className="mt-4 text-center text-sm leading-[1.8] text-ink-secondary">
-          استلمت دعوة إلى هذه المساحة؟ استخدم رابط «تعيين كلمة المرور» من بريدك، أو{" "}
-          <Link to="/teacher/set-password" className="font-semibold text-accent hover:underline">
-            استعد كلمة المرور
-          </Link>
-          .
-        </p>
-      </main>
-    </div>
+        <div className="mt-6 space-y-3 border-t border-line pt-5 text-xs leading-relaxed text-ink-secondary">
+          <p className="font-semibold text-ink">هذه أول زيارة لك كمعلّم؟</p>
+          <p>افتح رابط الدعوة المرسل إلى بريدك لتعيين كلمة المرور أولًا. لا يُنشأ حساب معلّم من نموذج تسجيل الطلاب.</p>
+          <Link to="/login" className="inline-flex items-center gap-2 font-semibold text-accent hover:underline">أنا طالب، الانتقال إلى دخول الطلاب<AuthIcon name="arrow" className="h-4 w-4" /></Link>
+        </div>
+    </WorkspaceAuth>
   );
 }

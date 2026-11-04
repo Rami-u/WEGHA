@@ -17,16 +17,32 @@ const NAV_LINKS = [
 
 export function MainSiteLayout() {
   const location = useLocation();
+  const isLanding = location.pathname === "/";
 
   return (
-    <div className="flex min-h-screen flex-col bg-landing text-ink overflow-x-clip">
-      <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex h-16 max-w-[1160px] items-center justify-between gap-4 px-6">
+    <div className={`flex min-h-screen flex-col bg-landing text-ink overflow-x-clip ${isLanding ? "landing-shell" : ""}`}>
+      <header className="marketing-header border-b border-line bg-surface">
+        <div className="marketing-header-inner mx-auto flex h-16 max-w-[1160px] items-center justify-between gap-4 px-6">
           <Link to="/" className="flex items-center gap-2" aria-label="وجهة — الصفحة الرئيسية">
-            <span aria-hidden className="flex h-8 w-8 items-center justify-center rounded-control bg-accent text-base font-extrabold text-accent-contrast">
-              و
-            </span>
-            <span className="text-xl font-extrabold tracking-normal text-ink">وجهة</span>
+            {isLanding ? (
+              <>
+                <span aria-hidden className="landing-brand-mark">
+                  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 6.5c4-1.5 8-1.5 12 1v20c-4-2.5-8-2.5-12-1v-20Z" />
+                    <path d="M16 7.5c4-2.5 8-2.5 12-1v20c-4-1.5-8-1.5-12 1v-20Z" />
+                  </svg>
+                </span>
+                <span className="landing-brand-text">
+                  <span className="landing-brand-name">وجهة</span>
+                  <span className="landing-brand-tagline">آفاق أوسع للمعرفة</span>
+                </span>
+              </>
+            ) : (
+              <>
+                <span aria-hidden className="flex h-8 w-8 items-center justify-center rounded-control bg-accent text-base font-extrabold text-accent-contrast">و</span>
+                <span className="text-xl font-extrabold tracking-normal text-ink">وجهة</span>
+              </>
+            )}
           </Link>
           <nav className="hidden items-center gap-7 text-sm font-medium text-ink-secondary sm:flex" aria-label="التنقل الرئيسي">
             {NAV_LINKS.map((link) => (
@@ -43,8 +59,8 @@ export function MainSiteLayout() {
               </a>
             ))}
           </nav>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
+          <div className="marketing-actions flex items-center gap-2">
+            <ThemeToggle showCurrentMode={isLanding} />
             <Link to="/teachers">
               <Button variant="secondary" size="md">
                 اختر معلّمك
@@ -55,22 +71,35 @@ export function MainSiteLayout() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1160px] flex-1 px-6 py-10">
+      <main className={`mx-auto w-full flex-1 px-6 py-10 ${isLanding ? "landing-main" : "max-w-[1160px]"}`}>
         <Outlet />
       </main>
 
-      <footer className="mt-auto border-t border-line bg-surface py-8">
-        <div className="mx-auto flex max-w-[1160px] flex-wrap items-center justify-between gap-4 px-6">
-          <div className="flex items-center gap-3">
-            <span aria-hidden className="flex h-8 w-8 items-center justify-center rounded-control bg-accent text-base font-extrabold text-accent-contrast">
-              و
-            </span>
-            <p className="text-sm leading-[1.7] text-ink-secondary">
-              <span className="font-extrabold text-ink">وجهة</span> — آفاق أوسع للمعرفة، وتجربة عربية تُرافق رحلتك.
-            </p>
-          </div>
+      <footer className="marketing-footer mt-auto border-t border-line bg-surface py-8">
+        <div className="marketing-footer-inner mx-auto flex max-w-[1160px] flex-wrap items-center justify-between gap-4 px-6">
+          {isLanding ? (
+            <div className="landing-footer-brand">
+              <div className="landing-footer-wordmark">
+                <span aria-hidden className="landing-footer-mark">
+                  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 6.5c4-1.5 8-1.5 12 1v20c-4-2.5-8-2.5-12-1v-20Z" />
+                    <path d="M16 7.5c4-2.5 8-2.5 12-1v20c-4-1.5-8-1.5-12 1v-20Z" />
+                  </svg>
+                </span>
+                <span>وجهة</span>
+              </div>
+              <p>آفاق أوسع للمعرفة. تجربة عربية، تُرافق رحلتك.</p>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <span aria-hidden className="flex h-8 w-8 items-center justify-center rounded-control bg-accent text-base font-extrabold text-accent-contrast">و</span>
+              <p className="text-sm leading-[1.7] text-ink-secondary">
+                <span className="font-extrabold text-ink">وجهة</span> — آفاق أوسع للمعرفة، وتجربة عربية تُرافق رحلتك.
+              </p>
+            </div>
+          )}
           <div className="text-xs leading-[1.7] text-ink-muted">
-            <p>نموذج تفاعلي — البيانات تُجلب من الواجهة الخلفية.</p>
+            <p>الدليل والملفات العامة تُجلب مباشرة من خدمة وجهة.</p>
             <p>
               الصورة:{" "}
               <a

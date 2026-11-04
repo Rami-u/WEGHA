@@ -11,7 +11,9 @@ Stack: Vite + React 19 + TypeScript + React Router 7 + Tailwind CSS 4.
 The UI follows the **وجهة / Wajha** design system in `D:\WEGHA\DESIGN.md`:
 
 - **Arabic RTL everywhere** — `<html lang="ar" dir="rtl">` in `index.html`; logical
-  utilities (`ms/me/ps/pe/start/end`) only. Tajawal loads via Google Fonts in `src/index.css`.
+  utilities (`ms/me/ps/pe/start/end`) only. Tajawal loads from local TTFs at
+  `public/fonts/tajawal/` (`@font-face` in `src/index.css` — no Google Fonts request).
+  In production Django's SPA view serves them from the dist tree with revalidation.
 - **Tokens** — all colors/radii/shadows are CSS custom properties in `src/index.css`
   (`:root` light, `.dark` dark) mapped with `@theme inline` to utilities such as
   `bg-page`, `bg-landing`, `bg-surface`, `bg-soft`, `text-ink`, `text-accent`,
@@ -73,7 +75,7 @@ resolve to `<slug>.edunova.com` in the deployed UI. See `docs/deployment.md` (si
 serving: set `FRONTEND_DIST=frontend/dist` in the backend and Django serves this bundle
 alongside the API).
 
-## Map to the backend (stages 1–5)
+## Map to the backend (stages 1–9)
 
 | Feature area | File | Endpoints |
 |---|---|---|
@@ -83,6 +85,9 @@ alongside the API).
 | Workspace shell | `src/features/workspace-shell/` | unavailable (403) / not found (404) pages |
 | Student auth | `src/features/student/` | `auth/register|login|logout|me|password-reset(/confirm)` |
 | Student dashboards | `src/features/student/dashboard/` | `courses/`, `courses/{id}/enroll/`, `enrollments/me/`, payments claim |
+| Course content | `src/features/course-content/` | `courses/`, `topics/`, `questions/…`, `exams/…`, `exams/…/questions/`, `exams/…/publish|archive` |
+| Exam attempts (student) | `src/features/course-content/ExamPage.tsx`, `StudentExamsPage.tsx` | `exams/`, `exams/…/attempts/start/`, `attempts/…/`, `attempts/…/submit/` |
+| Proctoring | `src/features/teacher/dashboard/ProctoringPage.tsx` | `attempts/…/proctoring/events/`, `proctoring/events/…/review/`, `attempts/…/browser-events/` |
 | Teacher auth | `src/features/teacher/LoginPage.tsx`, `SetPasswordPage.tsx` | `staff/auth/login|set-password|password-reset` |
 | Teacher dashboards | `src/features/teacher/dashboard/` | `workspaces/{slug}/` PATCH, `students/…/approve|reject`, `courses/`, `payments/…/confirm|reject|receipt` |
 
@@ -94,6 +99,20 @@ Rules baked into the UI (mirror the backend, never let users past forms it will 
 - Login pages show pending (`pending_approval`) and rejected (with `rejection_reason`) states from the
   403 body instead of a generic error.
 - The teacher login page is deliberately not linked from student areas.
+- `?workspace=science` on `localhost` previews a workspace on the main origin (dev helper in
+  `src/lib/slug.ts`; real routing is always the sub-domain).
+- The content screens (`src/features/course-content/`) use real API data for courses, topics, the
+  question bank and exams (create/edit/approve/reject/archive/publish, plus the ordered exam
+  question list). Lessons and lesson assets are the only remaining preview: this backend round has
+  no endpoints for them, so those sections say so on screen and never fake a request.
+- The student exam page shows the real attempt lifecycle (consent, start, server timer, auto-submit,
+  tab-hidden signal, submit). The API does not yet send questions or grade answers, so no questions
+  are displayed and the result screen shows the attempt state without a score.
+- Proctoring review lives at `/teacher/proctoring`; because there is no attempt-list endpoint yet,
+  it is opened with an attempt id (`/teacher/proctoring?attempt=12`).
+- Course-scoped sidebar links are contextual: the teacher's `محتوى الدورة` appears on a course
+  content route, and the student's `الدروس` / `الاختبار` appear while any course route is open.
+  They are derived from the URL (`useMatch`), never from component state.
 
 ## Editing the UI your own way
 

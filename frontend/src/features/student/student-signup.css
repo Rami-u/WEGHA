@@ -1,0 +1,17 @@
+.student-signup .signup-form-card {
+  padding: 1.5rem;
+}
+.signup-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+.signup-disclosure summary > svg {
+  transition: transform 200ms var(--ease-standard);
+}
+.signup-disclosure[open] summary > svg {
+  transform: rotate(180deg);
+}
+@media (min-width: 640px) {
+  .student-signup .signup-form-card {
+    padding: 2rem;
+  }
+}

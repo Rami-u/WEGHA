@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { loginStudent } from "../../api/studentAuth";
-import { Alert, Button, Card, Input, Label } from "../../components/ui";
+import { Alert, Button, Input, Label, Spinner } from "../../components/ui";
+import { AuthIcon, AuthPasswordField, WorkspaceAuth } from "../../components/WorkspaceAuth";
 import { useSession } from "../../context/SessionContext";
 import { useApiErrorText } from "../../lib/apiErrorText";
 import { ApiError } from "../../lib/apiClient";
@@ -30,6 +31,7 @@ export function StudentLoginPage() {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (submitting) return;
     setSubmitting(true);
     setCredentialsError(null);
     setStateError(null);
@@ -50,11 +52,7 @@ export function StudentLoginPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md">
-      <h1 className="text-[30px] font-extrabold leading-[1.4] text-ink">تسجيل الدخول</h1>
-      <p className="mt-1 text-sm leading-[1.8] text-ink-secondary">استخدم البريد الذي سجّلت به.</p>
-
-      <Card className="mt-6 shadow-elevated">
+    <WorkspaceAuth title="مرحبًا بعودتك." subtitle="ادخل إلى مساحة معلّمك، واستكمل رحلتك من حيث توقّفت." eyebrow="دخول الطلاب" panelTitle="مساحتك للتعلّم، ومكانك للانطلاق." tips={["استخدم الحساب الذي سجّلت به في هذه المساحة.", "يبدأ الدخول بعد موافقة المعلّم على طلبك.", "اختيار الدورات يتم داخل حسابك بعد القبول."]}>
         {stateError && (
           <div className="mb-4">
             <Alert tone={stateError.code === "account_rejected" ? "error" : "info"}>
@@ -70,53 +68,34 @@ export function StudentLoginPage() {
           </div>
         )}
 
-        <form className="space-y-4" onSubmit={submit}>
+        <form onSubmit={submit} aria-busy={submitting}>
+          <fieldset disabled={submitting} className="min-w-0 space-y-5">
           <div>
             <Label htmlFor="login-email">البريد الإلكتروني</Label>
             <Input
               id="login-email"
               type="email"
+              name="email"
+              autoComplete="email"
+              placeholder="name@example.com"
+              className="h-12 text-start"
               dir="ltr"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
               invalid={Boolean(credentialsError)}
+              aria-invalid={Boolean(credentialsError)}
             />
           </div>
-          <div>
-            <Label htmlFor="login-password">كلمة المرور</Label>
-            <div className="relative">
-              <Input
-                id="login-password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 end-2 my-auto h-8 rounded-control px-2 text-xs font-semibold text-accent hover:underline"
-                onClick={() => setShowPassword((value) => !value)}
-                aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
-              >
-                {showPassword ? "إخفاء" : "إظهار"}
-              </button>
-            </div>
-          </div>
-          <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? "جارٍ الدخول..." : "تسجيل الدخول"}
+          <AuthPasswordField id="login-password" label="كلمة المرور" autoComplete="current-password" value={password} onChange={setPassword} visible={showPassword} onToggle={() => setShowPassword((value) => !value)} />
+          <div className="flex justify-end"><Link to="/reset-password" className="text-xs font-semibold text-accent hover:underline">نسيت كلمة المرور؟</Link></div>
+          <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+            {submitting ? <><Spinner className="h-4 w-4" />جارٍ الدخول...</> : <>الدخول إلى مساحتي<AuthIcon name="arrow" /></>}
           </Button>
+          </fieldset>
         </form>
-      </Card>
-
-      <div className="mt-4 flex items-center justify-between text-sm text-ink-secondary">
-        <Link to="/reset-password" className="font-semibold text-accent hover:underline">
-          نسيت كلمة المرور؟
-        </Link>
-        <Link to="/signup" className="font-semibold text-accent hover:underline">
-          إنشاء حساب جديد
-        </Link>
-      </div>
-    </div>
+      <div className="mt-6 border-t border-line pt-5 text-center text-sm text-ink-secondary">لم تنضم لهذه المساحة بعد؟ <Link to="/signup" className="font-semibold text-accent hover:underline">أنشئ حساب طالب</Link></div>
+      <p className="mt-4 rounded-card bg-soft p-3 text-xs leading-relaxed text-ink-secondary">قدّمت طلبًا جديدًا؟ إذا كان قيد المراجعة، ستظهر حالته عند محاولة الدخول.</p>
+    </WorkspaceAuth>
   );
 }

@@ -1,0 +1,19 @@
+.teacher-profile .profile-hero {
+  padding: 0;
+}
+.teacher-profile .profile-explore-card {
+  background: var(--surface-section);
+}
+.profile-avatar > span,
+.profile-avatar > img {
+  border-radius: var(--radius-card);
+}
+.profile-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+.profile-disclosure summary > svg {
+  transition: transform 200ms var(--ease-standard);
+}
+.profile-disclosure[open] summary > svg {
+  transform: rotate(180deg);
+}

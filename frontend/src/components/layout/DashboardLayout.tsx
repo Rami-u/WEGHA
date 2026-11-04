@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useMatch, useNavigate } from "react-router-dom";
 
 import { ThemeToggle } from "../ThemeToggle";
 import { Button, cn, motionFast } from "../ui";
@@ -20,16 +20,33 @@ export function DashboardLayout() {
 
   const isTeacher = user?.role === ("teacher" satisfies Role);
 
-  const links = isTeacher
+  // Course-scoped pages have no global route, so their links only appear while
+  // a course is open. `courseId` is the id from the URL, never from state.
+  const studentCourse = useMatch("/courses/:courseId/*");
+  const teacherCourse = useMatch("/teacher/courses/:courseId/content");
+  const lessonsMatch = useMatch("/courses/:courseId/lessons/*");
+  const examMatch = useMatch("/courses/:courseId/exams/*");
+  const courseId = isTeacher ? teacherCourse?.params.courseId : studentCourse?.params.courseId;
+
+  const links: Array<{ to: string; label: string; end?: boolean; active?: boolean }> = isTeacher
     ? [
         { to: "/teacher/students", label: "الطلاب" },
-        { to: "/teacher/courses", label: "الدورات" },
+        { to: "/teacher/courses", label: "الدورات", end: true },
+        ...(courseId
+          ? [{ to: `/teacher/courses/${courseId}/content`, label: "محتوى الدورة" }]
+          : []),
         { to: "/teacher/payments", label: "المدفوعات" },
         { to: "/teacher/settings", label: "الإعدادات" },
       ]
     : [
-        { to: "/courses", label: "الدورات" },
+        { to: "/courses", label: "الدورات", end: true },
         { to: "/my-enrollments", label: "تسجيلاتي" },
+        ...(courseId
+          ? [
+              { to: `/courses/${courseId}/lessons/l1`, label: "الدروس", active: Boolean(lessonsMatch) },
+              { to: `/courses/${courseId}/exams`, label: "الاختبار", active: Boolean(examMatch) },
+            ]
+          : []),
       ];
 
   async function handleSignOut() {
@@ -39,7 +56,10 @@ export function DashboardLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-page text-ink">
+    // The app shell reserves `pb-24` for the floating home button; cancel it
+    // here and re-apply it inside <main> so the sticky rail spans the whole
+    // document instead of being clamped 96px above the page bottom.
+    <div className="flex min-h-screen -mb-24 bg-page text-ink">
       {/* Mobile drawer backdrop */}
       {drawerOpen && (
         <div
@@ -53,7 +73,9 @@ export function DashboardLayout() {
       <aside
         className={cn(
           "fixed inset-y-0 start-0 z-40 flex w-[246px] max-[1200px]:w-[222px] flex-col border-e border-line bg-surface px-3 py-4 transition-transform duration-250 ease-[var(--ease-standard)]",
-          "md:static md:shrink-0 md:translate-x-0",
+          // Desktop: pin the rail to the viewport so the account footer is
+          // always visible, while the page itself scrolls normally.
+          "md:sticky md:top-0 md:bottom-auto md:h-screen md:shrink-0 md:translate-x-0",
           // On narrow screens the drawer slides out of view to the physical right.
           drawerOpen ? "translate-x-0" : "max-[760px]:translate-x-full",
         )}
@@ -66,17 +88,18 @@ export function DashboardLayout() {
           </span>
         </div>
 
-        <nav className="mt-4 flex flex-col gap-1">
+        <nav className="mt-4 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
           {links.map((link) => (
             <NavLink
               key={link.to}
               to={link.to}
+              end={link.end}
               onClick={() => setDrawerOpen(false)}
               className={({ isActive }) =>
                 cn(
                   "flex h-10 items-center rounded-control px-3 text-sm font-medium transition-colors",
                   motionFast,
-                  isActive
+                  (link.active ?? isActive)
                     ? "bg-accent-soft text-accent"
                     : "text-ink-secondary hover:bg-soft hover:text-ink",
                 )
@@ -121,7 +144,7 @@ export function DashboardLayout() {
           <span className="truncate text-sm font-bold text-ink">{user?.workspace.name}</span>
         </div>
 
-        <main className="mx-auto w-full max-w-[1800px] flex-1 px-4 py-5 md:px-[39px] md:py-8">
+        <main className="mx-auto w-full max-w-[1800px] flex-1 px-4 pt-5 pb-24 md:px-[39px] md:pt-8 md:pb-24">
           <Outlet />
         </main>
       </div>

@@ -1,0 +1,19 @@
+.directory-tone-0 { --directory-tint: var(--tile-teal-bg); --directory-ink: var(--tile-teal-fg); }
+.directory-tone-1 { --directory-tint: var(--tile-blue-bg); --directory-ink: var(--tile-blue-fg); }
+.directory-tone-2 { --directory-tint: var(--tile-sand-bg); --directory-ink: var(--tile-sand-fg); }
+.directory-tone-3 { --directory-tint: var(--tile-purple-bg); --directory-ink: var(--tile-purple-fg); }
+.directory-teacher-card {
+  padding: 0;
+}
+.directory-teacher-cover {
+  color: var(--directory-ink);
+  background: var(--directory-tint);
+}
+.directory-teacher-avatar > span,
+.directory-teacher-avatar > img {
+  border-radius: var(--radius-pill);
+}
+.directory-teacher-avatar > span {
+  color: var(--directory-ink);
+  background: var(--directory-tint);
+}

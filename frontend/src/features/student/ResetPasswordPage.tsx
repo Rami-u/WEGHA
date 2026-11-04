@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { confirmStudentPasswordReset, startStudentPasswordReset } from "../../api/studentAuth";
-import { Alert, Button, Card, FieldError, Input, Label } from "../../components/ui";
+import { Alert, Button, Input, Label, Spinner } from "../../components/ui";
+import { AuthIcon, AuthPasswordField, AuthSuccess, WorkspaceAuth } from "../../components/WorkspaceAuth";
 import { useSession } from "../../context/SessionContext";
 import { useApiErrorText } from "../../lib/apiErrorText";
 import { ApiError } from "../../lib/apiClient";
@@ -38,6 +39,7 @@ export function ResetPasswordPage() {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (submitting || (hasToken && passwordsMismatch)) return;
     setSubmitting(true);
     setErrorText(null);
     setFieldErrors({});
@@ -45,6 +47,8 @@ export function ResetPasswordPage() {
       if (hasToken) {
         await confirmStudentPasswordReset(slug ?? "", uid as string, token as string, newPassword);
         setDone(true);
+        setNewPassword("");
+        setConfirmPassword("");
       } else {
         const response = await startStudentPasswordReset(slug ?? "", email);
         setSentMessage(response.detail);
@@ -59,30 +63,27 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md">
-      <h1 className="text-[30px] font-extrabold leading-[1.4] text-ink">
-        {hasToken ? "تعيين كلمة المرور الجديدة" : "استعادة كلمة المرور"}
-      </h1>
-
-      <Card className="mt-6 shadow-elevated">
-        {!hasToken && sentMessage && (
-          <div className="mb-4">
+    <WorkspaceAuth
+      title={hasToken ? "كلمة مرور جديدة، وبداية متجدّدة." : "لنعد إلى رحلتك."}
+      subtitle={hasToken ? "اختر كلمة مرور جديدة لحساب الطالب في هذه المساحة، ثم أكّدها للحفظ." : "أدخل بريد حسابك في هذه المساحة لطلب رابط استعادة كلمة المرور."}
+      eyebrow={hasToken ? "تعيين كلمة مرور الطالب" : "استعادة وصول الطالب"}
+      panelTitle={hasToken ? "خطوة أخيرة، ثم تتابع تعلّمك." : "نسيت كلمة المرور؟ وجهتك ما زالت هنا."}
+      tips={hasToken ? ["استخدم كلمة مرور مختلفة عن كلمات مرور حساباتك الأخرى.", "أكّد كلمة المرور نفسها قبل الحفظ.", "ستدخل لاحقًا بكلمة المرور الجديدة، دون بدء جلسة تلقائيًا."] : ["استخدم البريد الذي سجّلت به مع هذا المعلّم.", "راجع البريد الوارد ومجلد الرسائل غير المرغوب فيها.", "رابط الاستعادة خاص بحسابك داخل هذه المساحة."]}
+    >
+        {!hasToken && sentMessage !== null ? (
+          <AuthSuccess kind="mail" title="تحقّق من بريدك الإلكتروني.">
             <Alert tone="success">{sentMessage}</Alert>
-          </div>
-        )}
-
-        {hasToken && done && (
-          <div>
+            <p>إذا كان البريد مرتبطًا بحساب في هذه المساحة، فستصلك رسالة بالخطوة التالية. لا يؤكّد هذا الإشعار وجود حساب.</p>
+            <p className="rounded-card bg-soft p-3 text-xs">لم تجد الرسالة؟ راجع مجلد الرسائل غير المرغوب فيها، أو تأكّد من كتابة البريد الصحيح.</p>
+            <Button variant="secondary" onClick={() => setSentMessage(null)}>المحاولة ببريد آخر أو إعادة الطلب</Button>
+          </AuthSuccess>
+        ) : hasToken && done ? (
+          <AuthSuccess title="تم تحديث كلمة المرور.">
             <Alert tone="success">تم تعيين كلمة المرور بنجاح.</Alert>
-            <p className="mt-4 text-center text-sm text-ink-secondary">
-              <Link to="/login" className="font-semibold text-accent hover:underline">
-                سجّل الدخول بكلمة المرور الجديدة
-              </Link>
-            </p>
-          </div>
-        )}
-
-        {!(hasToken && done) && (
+            <p>يمكنك الآن استخدام كلمة المرور الجديدة للدخول إلى مساحة معلّمك.</p>
+            <Link to="/login" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control bg-accent px-5 py-3 font-semibold text-accent-contrast">الدخول إلى حسابي<AuthIcon name="arrow" /></Link>
+          </AuthSuccess>
+        ) : (
           <>
             {errorText && (
               <div className="mb-4">
@@ -90,75 +91,45 @@ export function ResetPasswordPage() {
               </div>
             )}
 
-            <form className="space-y-4" onSubmit={submit}>
+            <form onSubmit={submit} aria-busy={submitting}>
+              <fieldset disabled={submitting} className="min-w-0 space-y-5">
               {!hasToken && (
                 <div>
                   <Label htmlFor="reset-email">البريد الإلكتروني</Label>
                   <Input
                     id="reset-email"
                     type="email"
+                    name="email"
+                    autoComplete="email"
+                    className="h-12 text-start"
+                    placeholder="name@example.com"
                     dir="ltr"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     required
+                    aria-describedby="reset-email-hint"
                   />
+                  <p id="reset-email-hint" className="mt-2 text-xs leading-relaxed text-ink-muted">لن نعرض ما إذا كان البريد مسجّلًا، حفاظًا على خصوصية الحسابات.</p>
                 </div>
               )}
               {hasToken && (
                 <>
-                  <div>
-                    <Label htmlFor="reset-password">كلمة المرور الجديدة</Label>
-                    <div className="relative">
-                      <Input
-                        id="reset-password"
-                        type={showPassword ? "text" : "password"}
-                        value={newPassword}
-                        onChange={(event) => setNewPassword(event.target.value)}
-                        required
-                        invalid={Boolean(fieldErrors.new_password)}
-                        aria-describedby={fieldErrors.new_password ? "reset-password-error" : undefined}
-                      />
-                      <button
-                        type="button"
-                        className="absolute inset-y-0 end-2 my-auto h-8 rounded-control px-2 text-xs font-semibold text-accent hover:underline"
-                        onClick={() => setShowPassword((value) => !value)}
-                        aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
-                      >
-                        {showPassword ? "إخفاء" : "إظهار"}
-                      </button>
-                    </div>
-                    <span id="reset-password-error">
-                      <FieldError messages={fieldErrors.new_password} />
-                    </span>
-                  </div>
-                  <div>
-                    <Label htmlFor="reset-confirm">تأكيد كلمة المرور</Label>
-                    <Input
-                      id="reset-confirm"
-                      type={showPassword ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(event) => setConfirmPassword(event.target.value)}
-                      required
-                    />
-                    {passwordsMismatch && <p className="mt-1 text-sm font-medium text-err-form">كلمتا المرور غير متطابقتين.</p>}
-                  </div>
+                  <AuthPasswordField id="reset-password" label="كلمة المرور الجديدة" value={newPassword} onChange={setNewPassword} visible={showPassword} onToggle={() => setShowPassword((value) => !value)} errors={fieldErrors.new_password} hint="اختر كلمة مرور طويلة لا تستخدمها في مكان آخر، وتجنّب معلوماتك الشخصية." />
+                  <AuthPasswordField id="reset-confirm" label="تأكيد كلمة المرور" value={confirmPassword} onChange={setConfirmPassword} visible={showPassword} errors={passwordsMismatch ? ["كلمتا المرور غير متطابقتين."] : undefined} />
+                  {confirmPassword && !passwordsMismatch && <p className="text-xs text-accent" role="status">كلمتا المرور متطابقتان.</p>}
                 </>
               )}
-              <Button type="submit" className="w-full" disabled={submitting || passwordsMismatch}>
-                {submitting ? "جارٍ العمل..." : hasToken ? "تعيين كلمة المرور" : "إرسال رابط الاستعادة"}
+              <Button type="submit" size="lg" className="w-full" disabled={submitting || passwordsMismatch}>
+                {submitting ? <><Spinner className="h-4 w-4" />جارٍ العمل...</> : <>{hasToken ? "حفظ كلمة المرور الجديدة" : "إرسال رابط الاستعادة"}<AuthIcon name="arrow" /></>}
               </Button>
+              </fieldset>
             </form>
           </>
         )}
-      </Card>
-
-      {!hasToken && sentMessage && (
-        <p className="mt-4 text-center text-sm text-ink-secondary">
-          <Link to="/login" className="font-semibold text-accent hover:underline">
-            العودة إلى تسجيل الدخول
-          </Link>
-        </p>
-      )}
-    </div>
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-xs">
+        <Link to="/login" className="font-semibold text-accent hover:underline">العودة إلى تسجيل الدخول</Link>
+        {hasToken && !done && <Link to="/reset-password" className="font-semibold text-accent hover:underline">رابط منتهي؟ اطلب رابطًا جديدًا</Link>}
+      </div>
+    </WorkspaceAuth>
   );
 }

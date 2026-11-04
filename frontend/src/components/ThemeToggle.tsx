@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
  * picks a mode; stores the choice locally and syncs it between open tabs.
  * The initial value comes from the inline script in index.html.
  */
-export function ThemeToggle({ compact = false }: { compact?: boolean }) {
+export function ThemeToggle({ compact = false, showCurrentMode = false }: { compact?: boolean; showCurrentMode?: boolean }) {
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
 
   useEffect(() => {
@@ -31,6 +31,8 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
     setIsDark(next);
   }, [isDark]);
 
+  const showSun = showCurrentMode ? !isDark : isDark;
+
   return (
     <button
       type="button"
@@ -42,7 +44,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
       }`}
     >
       {/* Sun / moon glyphs; decorative icons duplicated as a text label for accessibility below. */}
-      {isDark ? (
+      {showSun ? (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" className="h-[18px] w-[18px] shrink-0" aria-hidden>
           <circle cx="12" cy="12" r="4.5" />
           <path d="M12 3v2.2M12 18.8V21M4.2 12H2M22 12h-2.2M6.3 6.3 4.8 4.8M19.2 19.2l-1.5-1.5M17.7 6.3l1.5-1.5M4.8 19.2l1.5-1.5" />
@@ -52,7 +54,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
           <path d="M20.6 14.2A8.3 8.3 0 0 1 9.8 3.4a8.4 8.4 0 1 0 10.8 10.8Z" />
         </svg>
       )}
-      {!compact && <span className="text-xs font-medium">{isDark ? "فاتح" : "داكن"}</span>}
+      {!compact && <span className="text-xs font-medium">{showSun ? "فاتح" : "داكن"}</span>}
     </button>
   );
 }

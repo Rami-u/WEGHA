@@ -16,6 +16,19 @@ export function baseDomain(): string {
   return BASE_DOMAIN;
 }
 
+/** Platform home, escaping both demo router basenames and real teacher subdomains. */
+export function mainSiteUrl(): string {
+  const { hostname, protocol, port } = window.location;
+  const portSuffix = port ? `:${port}` : "";
+  if (hostname.endsWith(".localhost")) {
+    return `${protocol}//localhost${portSuffix}/`;
+  }
+  if (slugFromHostname(hostname)) {
+    return `${protocol}//${BASE_DOMAIN}${portSuffix}/`;
+  }
+  return "/";
+}
+
 /** Extract the workspace slug from a hostname, or null when on the main domain. */
 export function slugFromHostname(hostname: string): string | null {
   const host = hostname.trim().toLowerCase();
@@ -45,7 +58,25 @@ export type PageMode = { mode: "main" } | { mode: "workspace"; slug: string };
 /** Mode of the page currently loaded. */
 export function resolvePageMode(): PageMode {
   const slug = slugFromHostname(window.location.hostname);
-  return slug ? { mode: "workspace", slug } : { mode: "main" };
+
+  if (slug) {
+    return { mode: "workspace", slug };
+  }
+
+  /*
+    Dev preview: `?workspace=science` on localhost only. The real routing always
+    comes from the sub-domain; this exists so the workspace screens can be
+    previewed on the main dev origin (automated checks, quick manual review).
+  */
+  const host = window.location.hostname;
+  if (host === "localhost" || host === "127.0.0.1") {
+    const override = new URLSearchParams(window.location.search).get("workspace");
+    if (override && /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(override)) {
+      return { mode: "workspace", slug: override };
+    }
+  }
+
+  return { mode: "main" };
 }
 
 /**

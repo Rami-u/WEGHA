@@ -8,6 +8,9 @@ import { useSession } from "../../../context/SessionContext";
 import { useApiErrorText } from "../../../lib/apiErrorText";
 import { ApiError } from "../../../lib/apiClient";
 import type { Course, EnrollResult } from "../../../types/api";
+import ActiveCourseOverview from "./ActiveCourseOverview";
+import PendingCourseOverview from "./PendingCourseOverview";
+import AvailableCourseOverview from "./AvailableCourseOverview";
 
 /**
  * Course detail. Students enroll here: a free course activates immediately, a
@@ -82,6 +85,18 @@ export function CourseDetailPage() {
   const activeEnrollment = course.enrollment_status === "active";
   const pendingPayment = course.enrollment_status === "pending_payment";
 
+  if (isStudent && activeEnrollment) {
+    return <ActiveCourseOverview key={`${slug}:${course.id}`} course={course} />;
+  }
+
+  if (isStudent && pendingPayment) {
+    return <PendingCourseOverview key={`${slug}:${course.id}`} course={course} />;
+  }
+
+  if (isStudent && !course.enrollment_status && enrollResult === null) {
+    return <AvailableCourseOverview course={course} enrolling={enrolling} error={enrollError} onEnroll={() => void enroll()} />;
+  }
+
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6 flex items-start gap-4">
@@ -120,11 +135,13 @@ export function CourseDetailPage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="font-bold text-success">أنت مسجّل في هذه الدورة.</p>
-                  <p className="mt-1 text-sm text-ink-secondary">يفتح محتوى الدورة في مرحلة لاحقة من المنصّة.</p>
+                  <p className="mt-1 text-sm text-ink-secondary">افتح الدروس وتابع محتوى الدورة والاختبار.</p>
                 </div>
-                <Link to="/my-enrollments">
-                  <Button variant="secondary">تسجيلاتي</Button>
-                </Link>
+                <div className="flex flex-wrap gap-2">
+                  <Link to={`/courses/${courseId}/lessons/l1`} className="rounded-control bg-accent px-4 py-3 text-sm font-semibold text-accent-contrast">افتح أول درس</Link>
+                  <Link to={`/courses/${courseId}/exams`} className="rounded-control border border-line px-4 py-3 text-sm font-semibold text-accent">اختبارات الدورة</Link>
+                  <Link to="/my-enrollments" className="rounded-control border border-line px-4 py-3 text-sm font-semibold text-accent">تسجيلاتي</Link>
+                </div>
               </div>
             )}
 

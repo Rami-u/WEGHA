@@ -1,9 +1,15 @@
 import { apiRequest } from "../lib/apiClient";
+import { fetchAllPages } from "./pagination";
 import type { ApprovalStatus, Page, StudentReviewEntry } from "../types/api";
 
 /** Workspace student review endpoints (§7.5) under /api/v1/workspaces/{slug}/students/. */
 
 const prefix = (slug: string): string => `/workspaces/${encodeURIComponent(slug)}/students`;
+
+/** Complete list for workspace-wide search and status counts in the teacher UI. */
+export function listAllWorkspaceStudents(slug: string): Promise<StudentReviewEntry[]> {
+  return fetchAllPages<StudentReviewEntry>(`${prefix(slug)}/`);
+}
 
 /** GET /students/?status=pending|approved|rejected — filter; anything else is a 400. */
 export function listWorkspaceStudents(

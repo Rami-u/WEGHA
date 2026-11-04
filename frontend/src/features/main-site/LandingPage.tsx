@@ -54,17 +54,17 @@ const FEATURE_STRIP = [
 const STEPS = [
   {
     title: "اختر معلّمك",
-    body: "استعرض دليل المعلّمين واختر التخصص الذي تريد تعلّمه.",
+    body: "تعرّف على المعلّمين وابحث عن التخصص الذي تريد تعلّمه.",
     icon: "grid" as const,
   },
   {
     title: "سجّل في مساحة المعلّم",
-    body: "أنشئ حسابك من صفحة المعلّم نفسه، وانتظر موافقته على طلبك.",
+    body: "أنشئ حسابك من صفحة معلّمك، وانضم إلى طلابه في مساحته الخاصة.",
     icon: "book" as const,
   },
   {
-    title: "تابع رحلة تعلّمك",
-    body: "الدورات المجانية تُفعَّل فورًا، وبمقابل ينتظر تأكيد المعلّم لإشعار الدفع.",
+    title: "شاهد أثر تعلّمك",
+    body: "أكمل الدروس، اختبر معرفتك، وراجع نتائجك وتقدّمك.",
     icon: "chart" as const,
   },
 ];
@@ -83,7 +83,7 @@ const FAQS = [
     a: "نعم. لكل معلّم مساحة وحساب مستقل، ولك كلمة مرور وطلب موافقة داخل كل مساحة.",
   },
   {
-    q: "أين تُحفظ تسجيلاتي؟",
+    q: "أين يُحفظ تقدّمي؟",
     a: "تسجيلاتك ودوراتك محفوظة في مساحة المعلّم نفسها، وتظهر لك في حسابك بعد الموافقة.",
   },
 ];
@@ -94,8 +94,8 @@ function Icon({ name, className = "h-4 w-4" }: { name: string; className?: strin
   const paths: Record<string, ReactNode> = {
     book: (
       <>
-        <path d="M3 4.5c2.5-1 5-1 7 .5v13c-2-1.5-4.5-1.5-7-.5v-13Z" />
-        <path d="M10 5c2-1.5 4.5-1.5 7-.5v13c-2.5-1-5-1-7 .5v-13Z" />
+        <path d="M3 4.5c3-1 6-1 9 1v15c-3-2-6-2-9-1v-15Z" />
+        <path d="M12 5.5c3-2 6-2 9-1v15c-3-1-6-1-9 1v-15Z" />
       </>
     ),
     grid: (
@@ -114,11 +114,12 @@ function Icon({ name, className = "h-4 w-4" }: { name: string; className?: strin
     ),
     chart: (
       <>
-        <path d="M4 20V10" />
-        <path d="M10 20V4" />
-        <path d="M16 20v-8" />
+        <path d="M3 3v18h18" />
+        <path d="M8 17v-6m5 6V7m5 10V4" />
       </>
     ),
+    "arrow-left": <path d="M20 12H4m7-7-7 7 7 7" />,
+    "arrow-up": <path d="M12 20V4m-7 7 7-7 7 7" />,
     star: <path d="M12 3.5l2.3 4.7 5.2.7-3.8 3.6.9 5.1L12 15.2l-4.6 2.4.9-5.1-3.8-3.6 5.2-.7L12 3.5Z" />,
     check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
     chevron: <path d="M6 9l6 6 6-6" />,
@@ -211,94 +212,100 @@ export function LandingPage() {
   return (
     <div className="divide-y divide-line">
       {/* ---------- 1. Hero ---------- */}
-      <section className="grid items-center gap-10 pb-14 pt-6 lg:grid-cols-[1fr_1.05fr]">
-        <div>
-          <p className="flex items-center justify-end gap-2 text-sm text-ink-secondary">
+      <section className="landing-hero">
+        <div className="hero-copy">
+          <p className="hero-eyebrow">
             <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
             لكل فضول، بداية جديدة
           </p>
-          <h1 className="mt-4 text-[clamp(42px,5vw,64px)] font-extrabold leading-[1.25] text-ink">
+          <h1 className="hero-title">
             تعلّم اليوم.
             <br />
-            <span className="relative inline-block text-accent">
-              حدّد وجهتك.
+            <span className="hero-title-line">
+              حدّد <span className="text-accent">وجهتك</span><span className="hero-period">.</span>
               <span
                 aria-hidden
-                className="absolute -bottom-1 start-0 h-2 w-full rounded-full bg-accent/20"
+                className="hero-underline"
               />
             </span>
           </h1>
-          <p className="mt-5 max-w-lg text-sm leading-[1.9] text-ink-secondary">
-            تعلّم مع معلّم يقدُم رحلتك. اختر معلّمك، واشترك إلى مساحته الخاصة، وحدّد خطوتك الأولى نحو ما تريد أن تكون.
+          <p className="hero-description">
+            تعلّم مع معلّم يفهم رحلتك.
+            <br />
+            اختر معلّمك، وانضم إلى مساحته الخاصة،
+            <br />
+            لتخطو بثقة نحو ما تريد أن تكون.
           </p>
-          <div className="mt-7 flex flex-wrap items-center gap-4">
+          <div className="hero-action">
             <Link to="/teachers">
-              <Button size="lg">
+              <Button size="lg" className="hero-cta">
                 ابدأ رحلتك
-                <span aria-hidden>←</span>
+                <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 12H4m7-7-7 7 7 7" />
+                </svg>
               </Button>
             </Link>
           </div>
-          <p className="mt-3 flex items-center gap-2 text-xs text-ink-muted">
-            <Icon name="check" className="h-3.5 w-3.5 text-success" />
-            اختر معلّمك أولًا، ثم سجّل معه — نسخة تجريبية.
+          <p className="hero-note">
+            <Icon name="check" className="h-4 w-4" />
+            اختر معلّمك أولًا، ثم سجّل معه وتابع حتى الاعتماد.
           </p>
-          <p className="mt-10 border-t border-line pt-5 text-sm font-semibold text-ink">
+          <p className="hero-tagline">
+            <span aria-hidden className="h-px w-8 bg-line" />
             رحلة تعلّم أوضح. آفاق أوسع.
           </p>
         </div>
 
         {/* Photo composition with floating cards (decorative) */}
-        <div className="relative px-4 pb-6 pt-10" aria-hidden>
-          <span className="absolute -top-2 end-6 text-4xl font-light text-ink-muted select-none">+</span>
-          <div className="relative">
-            <span className="absolute -inset-4 -rotate-3 rounded-[3rem] border border-line" />
-            <div className="relative overflow-hidden rounded-[2.2rem]">
+        <div className="hero-art" aria-hidden>
+          <span className="hero-plus">+</span>
+          <div className="hero-photo-stage">
+            <span className="hero-outline" />
+            <div className="hero-photo">
               <img
                 src="/images/hero-student.jpg"
                 alt=""
-                className="h-[430px] w-full object-cover"
+                className="hero-image"
                 loading="eager"
               />
-              <div className="absolute inset-x-0 bottom-0 bg-surface/90 px-6 py-3 text-center">
-                <p className="font-bold text-ink">خطواتك القادمة تبدأ من هنا.</p>
+              <div className="hero-photo-caption">
+                <p>كل يوم، فرصة جديدة.</p>
+                <p>خطوتك القادمة تبدأ هنا.</p>
               </div>
             </div>
 
-            <div className="absolute -start-8 top-10 flex items-center gap-3 rounded-control bg-surface p-3 pe-5 shadow-elevated">
-              <span className="flex h-10 w-10 items-center justify-center rounded-card bg-accent-soft text-accent">
-                <Icon name="star" />
+            <div className="hero-goal-card">
+              <span className="hero-goal-check">
+                <Icon name="check" />
               </span>
-              <div>
-                <p className="text-sm font-bold text-ink">خطوة أقرب إلى هدفك</p>
-                <p className="text-[11px] text-ink-muted">كل درس يصنع فرقًا.</p>
+              <div className="hero-goal-text">
+                <p>خطوة أقرب إلى هدفك</p>
+                <p>كل درس يصنع فرقًا.</p>
               </div>
-              <span className="ms-4 flex h-8 w-8 items-center justify-center rounded-full bg-success-bg text-success">
-                <Icon name="check" className="h-4 w-4" />
+              <span className="hero-goal-star">
+                <Icon name="star" className="h-5 w-5" />
               </span>
             </div>
 
-            <div className="absolute -bottom-2 end-[-14px] w-60 rounded-control bg-surface/95 p-4 shadow-elevated backdrop-blur">
-              <p className="text-[11px] text-ink-muted">تقدّم على هدف، ويُبنى بنقّة.</p>
-              <p className="mt-1 flex items-center gap-2 text-sm font-bold text-ink">
-                <span className="flex h-7 w-7 items-center justify-center rounded-card bg-accent-soft text-accent">
-                  <Icon name="book" className="h-3.5 w-3.5" />
-                </span>
-                شاهد كيف تُبنى معرفتك
-              </p>
-              <span className="mt-2 block h-1.5 rounded-full bg-soft">
-                <span className="block h-1.5 w-3/4 rounded-full bg-accent" />
+            <div className="hero-knowledge-card">
+              <span className="hero-knowledge-icon">
+                <Icon name="book" className="h-7 w-7" />
               </span>
+              <div className="hero-knowledge-content">
+                <p>تعلّم على مهل، وتقدّم بثقة.</p>
+                <p>شاهد كيف تُبنى معرفتك</p>
+                <span className="hero-progress"><span /></span>
+              </div>
             </div>
           </div>
-          <p className="mt-4 text-center text-[11px] text-ink-muted">تعلّم. اكتشف. تقدّم.</p>
+          <p className="hero-art-caption">تعلّم. اكتشف. تقدّم.</p>
         </div>
       </section>
 
       {/* ---------- 2. Feature strip ---------- */}
       <section className="py-10">
-        <div className="flex flex-wrap items-center justify-between gap-6">
-          <p className="max-w-[220px] text-sm font-semibold leading-[1.8] text-ink">
+        <div className="grid items-start gap-6 sm:grid-cols-2 lg:grid-cols-5">
+          <p className="text-sm font-semibold leading-[1.8] text-ink">
             مهما كانت رحلتك، هناك معلّم يناسبك.
           </p>
           {FEATURE_STRIP.map((item) => (
@@ -330,7 +337,7 @@ export function LandingPage() {
           />
         </div>
 
-        <ul className="mt-5 flex flex-wrap justify-end gap-2" aria-label="التصنيفات">
+        <ul className="mt-5 flex flex-wrap gap-2" aria-label="التصنيفات">
           {CATEGORIES.map((item, index) => (
             <li key={item.label}>
               <button
@@ -382,111 +389,118 @@ export function LandingPage() {
           </ul>
         )}
 
-        <div className="mt-10 text-center">
+        <div className="teacher-discovery-footer">
           <Link to="/teachers">
-            <Button variant="secondary" size="lg">
+            <Button variant="secondary" size="lg" className="teacher-discovery-button">
               استكشف جميع المعلمين
-              <span aria-hidden>←</span>
+              <Icon name="arrow-left" className="h-5 w-5" />
             </Button>
           </Link>
-          <p className="mt-3 text-xs text-ink-muted">
-            أسماء المعلمين وصفحاتهم معروضة للتصفح قبل التسجيل — لا حاجة للحساب للبدء.
+          <p>
+            أسماء المعلمين وعناوينهم من الدليل الفعلي للمنصّة — استعرض الملفات الكاملة في دليل المعلمين.
           </p>
         </div>
       </section>
 
       {/* ---------- 4. Steps ---------- */}
-      <section id="how" className="scroll-mt-24 py-4">
-        <div className="relative left-1/2 w-screen -translate-x-1/2 bg-section px-6 py-14">
-          <div className="mx-auto grid w-full max-w-[1112px] items-start gap-10 lg:grid-cols-2">
-            <div>
-              <p className="text-sm text-ink-muted">من البداية إلى الإتقان</p>
-              <h2 className="mt-2 text-[clamp(28px,3vw,36px)] font-extrabold leading-[1.4] text-ink">
-                طريق واضح. سطور واضحة.
-              </h2>
-              <p className="mt-3 max-w-md text-sm leading-[1.9] text-ink-secondary">
-                لا تحتاج أن تعرف كل شيء لتبدأ. تحتاج فقط أن تختار خطوتك الأولى.
-              </p>
-              <Link to="/teachers" className="mt-6 inline-block">
-                <Button>اكتشف المعلمين</Button>
-              </Link>
-            </div>
-
-            <ol className="divide-y divide-line">
-              {STEPS.map((step, index) => (
-                <li key={step.title} className="flex items-start justify-between gap-6 py-6 first:pt-2 last:pb-2">
-                  <div>
-                    <p className="text-xs text-ink-muted">{toArabicDigits(index + 1)}.</p>
-                    <h3 className="mt-1 font-bold text-ink">{step.title}</h3>
-                    <p className="mt-1 text-sm leading-[1.8] text-ink-secondary">{step.body}</p>
-                  </div>
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center text-ink-muted">
-                    <Icon name={step.icon} className="h-6 w-6" />
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </div>
+      <section id="how" className="landing-journey" aria-labelledby="journey-heading">
+        <div className="journey-copy">
+          <p className="journey-eyebrow">من البداية إلى الإنجاز</p>
+          <h2 id="journey-heading" className="journey-title">
+            طريق واضح.
+            <br />
+            خطوة بعد خطوة.
+          </h2>
+          <p className="journey-description">
+            لا تحتاج أن تعرف كل شيء لتبدأ.
+            <br />
+            تحتاج فقط أن تختار خطوتك الأولى.
+          </p>
+          <Link to="/teachers" className="journey-action">
+            <Button size="lg" className="journey-button">
+              اكتشف المعلمين
+              <Icon name="arrow-left" className="h-5 w-5" />
+            </Button>
+          </Link>
         </div>
+
+        <ol className="journey-steps">
+          {STEPS.map((step, index) => (
+            <li key={step.title} className="journey-step">
+              <span className="journey-step-number" aria-hidden>{toArabicDigits(index + 1).padStart(2, "٠")}</span>
+              <div className="journey-step-copy">
+                <h3>{step.title}</h3>
+                <p>{step.body}</p>
+              </div>
+              <span className="journey-step-icon">
+                <Icon name={step.icon} className="h-7 w-7" />
+              </span>
+            </li>
+          ))}
+        </ol>
       </section>
 
       {/* ---------- 5. FAQ ---------- */}
-      <section id="faq" className="scroll-mt-24 py-14">
+      <section id="faq" className="landing-faq">
         <p className="text-center text-sm text-ink-muted">قبل خطوتك الأولى</p>
         <h2 className="mt-2 text-center text-[clamp(28px,3vw,36px)] font-extrabold leading-[1.4] text-ink">
           قد تتساءل…
         </h2>
         <p className="mt-2 text-center text-sm text-ink-secondary">إجابات بسيطة لتبدأ بثقة.</p>
 
-        <div className="mx-auto mt-8 max-w-3xl divide-y divide-line">
+        <div className="landing-faq-items">
           {FAQS.map((faq) => (
-            <details key={faq.q} className="group px-2 py-5">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink marker:content-none">
+            <details key={faq.q} className="landing-faq-item">
+              <summary>
                 {faq.q}
                 <Icon
                   name="chevron"
-                  className="h-4 w-4 shrink-0 text-ink-muted transition-transform duration-200 group-open:rotate-180"
+                  className="faq-chevron"
                 />
               </summary>
-              <p className="mt-3 text-sm leading-[1.9] text-ink-secondary">{faq.a}</p>
+              <p>{faq.a}</p>
             </details>
           ))}
         </div>
       </section>
 
       {/* ---------- 6. Closing CTA ---------- */}
-      <section className="pb-6 pt-8">
-        <div className="relative overflow-hidden rounded-panel bg-panel px-8 py-14 text-center text-panel-fg md:px-14">
-          <span className="pointer-events-none absolute -start-10 top-1/2 flex h-48 w-48 -translate-y-1/2 items-center justify-center rounded-full bg-panel-fg/5">
-            <Icon name="book" className="h-16 w-16 text-panel-fg/15" />
+      <section className="landing-closing" aria-labelledby="closing-heading">
+        <div className="closing-panel">
+          <span className="closing-watermark" aria-hidden>
+            <Icon name="book" className="closing-book" />
           </span>
-          <p className="text-sm text-panel-fg/70">المعرفة تفتح أبواباً جديدة</p>
-          <h2 className="mt-2 text-[clamp(28px,3.4vw,40px)] font-extrabold leading-[1.4]">
-            أفقك القادم، يبدأ بخطوة.
+          <p className="closing-eyebrow">المعرفة تفتح أبوابًا جديدة</p>
+          <h2 id="closing-heading" className="closing-title">
+            أفقك القادم يبدأ بخطوة.
           </h2>
-          <p className="mx-auto mt-3 max-w-lg text-sm leading-[1.9] text-panel-fg/75">
-            ابدأ رحلتك مع وجهة، واجعل فضولك بوابتك إلى المزيد.
+          <p className="closing-description">
+            ابدأ رحلتك مع وجهة، واجعل فضولك يقودك إلى المزيد.
           </p>
-          <Link to="/teachers" className="mt-7 inline-block">
-            <Button variant="secondary" size="lg">
+          <Link to="/teachers" className="closing-action">
+            <Button variant="secondary" size="lg" className="closing-button">
               ابدأ رحلتك الآن
-              <span aria-hidden>←</span>
+              <Icon name="arrow-left" className="h-5 w-5" />
             </Button>
           </Link>
-          <p className="mt-4 text-xs text-panel-fg/60">بدون حساب: تصفّح دليل المعلّمين واختر معلّمك حين تكون مستعدًّا.</p>
+          <p className="closing-note">اختر معلّمك وتابع إلى مساحته الخاصة للتسجيل والالتحاق بدوراته.</p>
         </div>
       </section>
 
       {/* Back to top */}
       {scrolled && (
-        <button
+        <Button
+          variant="secondary"
           type="button"
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-6 end-6 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-line bg-surface text-accent shadow-elevated transition-all hover:bg-soft"
+          onClick={() => window.scrollTo({
+            top: 0,
+            behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+          })}
+          className="landing-back-top"
           aria-label="العودة إلى الأعلى"
         >
-          <span aria-hidden>↑</span>
-        </button>
+          <Icon name="arrow-up" className="h-6 w-6" />
+        </Button>
       )}
     </div>
   );
@@ -505,10 +519,10 @@ function TeacherPreviewCard({
   const title = entry.teacher_name || entry.name;
 
   return (
-    <li className="h-full overflow-hidden rounded-card border border-line bg-surface transition-all duration-200 ease-[var(--ease-standard)] hover:-translate-y-1 hover:shadow-card">
+    <li className="flex h-full min-w-0 flex-col overflow-hidden rounded-card border border-line bg-surface transition-all duration-200 ease-[var(--ease-standard)] hover:-translate-y-1 hover:shadow-card">
       {/* Tinted cover with watermark + optional subject chip */}
       <div
-        className="relative flex h-24 items-center justify-center"
+        className="relative flex h-24 shrink-0 items-center justify-center"
         style={{ background: `var(--tile-${tile}-bg)` }}
       >
         {subjects[0] && (
@@ -541,7 +555,7 @@ function TeacherPreviewCard({
         </div>
       </div>
 
-      <div className="px-5 pb-5 pt-12">
+      <div className="flex flex-1 flex-col px-5 pb-5 pt-12">
         <p className="min-w-0 truncate text-center text-lg font-extrabold text-ink">{title}</p>
         {entry.headline && (
           <p className="mt-2 line-clamp-2 min-h-[3.4em] text-center text-sm leading-[1.8] text-ink-secondary">
@@ -564,7 +578,7 @@ function TeacherPreviewCard({
           </p>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-auto pt-4">
           <Link
             to={`/teachers/${entry.slug}`}
             className="flex h-10 w-full items-center justify-center gap-2 rounded-control border border-line bg-surface text-sm font-semibold text-accent transition-colors hover:bg-soft"
@@ -573,7 +587,7 @@ function TeacherPreviewCard({
             <span aria-hidden>←</span>
           </Link>
           <a
-            href={subdomainUrl(entry.slug)}
+            href={subdomainUrl(entry.slug, "/signup")}
             className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-control bg-accent text-sm font-semibold text-accent-contrast transition-opacity hover:opacity-90"
           >
             تعلّم مع المعلم

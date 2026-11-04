@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { setStaffPassword, startStaffPasswordReset } from "../../api/staffAuth";
-import { Alert, Button, Card, FieldError, Input, Label } from "../../components/ui";
+import { Alert, Button, Input, Label, Spinner } from "../../components/ui";
+import { AuthIcon, AuthPasswordField, AuthSuccess, WorkspaceAuth } from "../../components/WorkspaceAuth";
 import { useSession } from "../../context/SessionContext";
 import { useApiErrorText } from "../../lib/apiErrorText";
 import { ApiError } from "../../lib/apiClient";
@@ -17,7 +18,7 @@ import { ApiError } from "../../lib/apiClient";
  * answer is always generic, so it does not reveal whether the email exists.
  */
 export function TeacherSetPasswordPage() {
-  const { slug, workspace } = useSession();
+  const { slug } = useSession();
   const [searchParams] = useSearchParams();
   const uid = searchParams.get("uid");
   const token = searchParams.get("token");
@@ -37,12 +38,15 @@ export function TeacherSetPasswordPage() {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (submitting || passwordsMismatch) return;
     setSubmitting(true);
     setErrorText(null);
     setFieldErrors({});
     try {
       await setStaffPassword(slug ?? "", uid as string, token as string, newPassword);
       setDone(true);
+      setNewPassword("");
+      setConfirmPassword("");
     } catch (error) {
       const apiError = error as ApiError;
       setFieldErrors(apiError.fieldErrors ?? {});
@@ -53,33 +57,19 @@ export function TeacherSetPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-landing text-ink">
-      <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex h-14 max-w-[1160px] items-center px-6">
-          <Link to="/" className="text-lg font-extrabold text-ink">
-            {workspace?.name ?? "مساحة المعلّم"}
-          </Link>
-        </div>
-      </header>
-
-      <main className="mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center px-6 py-12">
-        <h1 className="text-[30px] font-extrabold leading-[1.4] text-ink">
-          {missingLink ? "استعادة كلمة المرور" : "تعيين كلمة المرور"}
-        </h1>
-        <p className="text-sm leading-[1.8] text-ink-secondary">
-          {missingLink ? "نسيت كلمة المرور؟ أدخل بريدك لإرسال رابط استعادة." : "اختر كلمة المرور الخاصة بحسابك كمعلّم."}
-        </p>
-
-        <Card className="mt-6 shadow-elevated">
+    <WorkspaceAuth teacher
+      title={missingLink ? "استعد الوصول إلى مساحتك." : "جهّز مفتاح مساحتك."}
+      subtitle={missingLink ? "أدخل البريد الخاص بحساب المعلّم لطلب رابط تعيين كلمة المرور." : "عيّن كلمة المرور الخاصة بحساب المعلّم، ثم ادخل لإدارة مساحتك."}
+      eyebrow={missingLink ? "استعادة حساب المعلّم" : "تعيين كلمة مرور المعلّم"}
+      panelTitle="مساحتك التعليمية، تحت إدارتك."
+      tips={missingLink ? ["استخدم البريد الذي استلمت عليه دعوة المعلّم.", "تصل الخطوة التالية إلى البريد إذا كان مرتبطًا بالحساب.", "لا تستخدم نموذج استعادة الطلاب لحساب المعلّم."] : ["هذا الرابط مخصّص لحساب المعلّم في هذه المساحة.", "اختر كلمة مرور طويلة ومختلفة عن حساباتك الأخرى.", "لن يبدأ تسجيل الدخول تلقائيًا بعد حفظ كلمة المرور."]}
+    >
           {done && (
-            <div>
+            <AuthSuccess title="كلمة مرورك جاهزة.">
               <Alert tone="success">تم تعيين كلمة المرور بنجاح.</Alert>
-              <p className="mt-4 text-center text-sm text-ink-secondary">
-                <Link to="/teacher/login" className="font-semibold text-accent hover:underline">
-                  الانتقال إلى صفحة دخول المعلّمين
-                </Link>
-              </p>
-            </div>
+              <p>استخدم كلمة المرور الجديدة للدخول إلى لوحة إدارة مساحتك.</p>
+              <Link to="/teacher/login" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control bg-accent px-5 py-3 font-semibold text-accent-contrast">الانتقال إلى دخول المعلّم<AuthIcon name="arrow" /></Link>
+            </AuthSuccess>
           )}
 
           {!done && missingLink && <RequestResetForm slug={slug ?? ""} />}
@@ -92,52 +82,20 @@ export function TeacherSetPasswordPage() {
                 </div>
               )}
 
-              <form className="space-y-4" onSubmit={submit}>
-                <div>
-                  <Label htmlFor="set-new-password">كلمة المرور الجديدة</Label>
-                  <div className="relative">
-                    <Input
-                      id="set-new-password"
-                      type={showPassword ? "text" : "password"}
-                      value={newPassword}
-                      onChange={(event) => setNewPassword(event.target.value)}
-                      required
-                      invalid={Boolean(fieldErrors.new_password)}
-                      aria-describedby={fieldErrors.new_password ? "set-new-password-error" : undefined}
-                    />
-                    <button
-                      type="button"
-                      className="absolute inset-y-0 end-2 my-auto h-8 rounded-control px-2 text-xs font-semibold text-accent hover:underline"
-                      onClick={() => setShowPassword((value) => !value)}
-                      aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
-                    >
-                      {showPassword ? "إخفاء" : "إظهار"}
-                    </button>
-                  </div>
-                  <span id="set-new-password-error">
-                    <FieldError messages={fieldErrors.new_password} />
-                  </span>
-                </div>
-                <div>
-                  <Label htmlFor="set-confirm-password">تأكيد كلمة المرور</Label>
-                  <Input
-                    id="set-confirm-password"
-                    type={showPassword ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    required
-                  />
-                  {passwordsMismatch && <p className="mt-1 text-sm font-medium text-err-form">كلمتا المرور غير متطابقتين.</p>}
-                </div>
-                <Button type="submit" className="w-full" disabled={submitting || passwordsMismatch}>
-                  {submitting ? "جارٍ الحفظ..." : "تعيين كلمة المرور"}
+              <form onSubmit={submit} aria-busy={submitting}>
+                <fieldset disabled={submitting} className="min-w-0 space-y-5">
+                <AuthPasswordField id="set-new-password" label="كلمة المرور الجديدة" value={newPassword} onChange={setNewPassword} visible={showPassword} onToggle={() => setShowPassword((value) => !value)} errors={fieldErrors.new_password} hint="اختر كلمة مرور لا يسهل توقّعها، ولا تشاركها مع أي شخص." />
+                <AuthPasswordField id="set-confirm-password" label="تأكيد كلمة المرور" value={confirmPassword} onChange={setConfirmPassword} visible={showPassword} errors={passwordsMismatch ? ["كلمتا المرور غير متطابقتين."] : undefined} />
+                {confirmPassword && !passwordsMismatch && <p className="text-xs text-accent" role="status">كلمتا المرور متطابقتان.</p>}
+                <Button type="submit" size="lg" className="w-full" disabled={submitting || passwordsMismatch}>
+                  {submitting ? <><Spinner className="h-4 w-4" />جارٍ الحفظ...</> : <>حفظ كلمة المرور<AuthIcon name="arrow" /></>}
                 </Button>
+                </fieldset>
               </form>
             </>
           )}
-        </Card>
-      </main>
-    </div>
+        {!done && !missingLink && <Link to="/teacher/set-password" className="mt-6 inline-block text-xs font-semibold text-accent hover:underline">رابط غير صالح أو منتهي؟ اطلب رابطًا جديدًا</Link>}
+    </WorkspaceAuth>
   );
 }
 
@@ -152,6 +110,7 @@ function RequestResetForm({ slug }: { slug: string }) {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (submitting) return;
     setSubmitting(true);
     setErrorText(null);
     try {
@@ -166,14 +125,12 @@ function RequestResetForm({ slug }: { slug: string }) {
 
   if (sentDetail !== null) {
     return (
-      <>
+      <AuthSuccess kind="mail" title="تحقّق من بريد حساب المعلّم.">
         <Alert tone="success">{sentDetail}</Alert>
-        <p className="mt-4 text-center text-sm text-ink-secondary">
-          <Link to="/teacher/login" className="font-semibold text-accent hover:underline">
-            العودة إلى صفحة دخول المعلّمين
-          </Link>
-        </p>
-      </>
+        <p>إذا كان البريد مرتبطًا بحساب معلّم، فستصلك رسالة بالخطوة التالية. راجع أيضًا الرسائل غير المرغوب فيها.</p>
+        <Button variant="secondary" onClick={() => setSentDetail(null)}>إعادة الطلب أو تعديل البريد</Button>
+        <p><Link to="/teacher/login" className="font-semibold text-accent hover:underline">العودة إلى دخول المعلّم</Link></p>
+      </AuthSuccess>
     );
   }
 
@@ -189,21 +146,27 @@ function RequestResetForm({ slug }: { slug: string }) {
         إذا كان بريدك مسجّلًا كمعلّم في هذه المساحة، سنرسل إليه رابطًا لتعيين كلمة مرور جديدة.
       </p>
 
-      <form className="mt-4 space-y-4" onSubmit={submit}>
+      <form className="mt-5" onSubmit={submit} aria-busy={submitting}>
+        <fieldset disabled={submitting} className="min-w-0 space-y-5">
         <div>
           <Label htmlFor="reset-email">البريد الإلكتروني</Label>
           <Input
             id="reset-email"
             type="email"
+            name="email"
+            autoComplete="email"
+            placeholder="name@example.com"
+            className="h-12 text-start"
             dir="ltr"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             required
           />
         </div>
-        <Button type="submit" className="w-full" disabled={submitting}>
-          {submitting ? "جارٍ الإرسال..." : "إرسال رابط الاستعادة"}
+        <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+          {submitting ? <><Spinner className="h-4 w-4" />جارٍ الإرسال...</> : <>إرسال رابط الاستعادة<AuthIcon name="arrow" /></>}
         </Button>
+        </fieldset>
       </form>
 
       <p className="mt-4 text-center text-sm text-ink-secondary">

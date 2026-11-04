@@ -1,4 +1,5 @@
 import { apiRequest } from "../lib/apiClient";
+import { fetchAllPages } from "./pagination";
 import type { Page, PaymentStatus, PaymentSubmission } from "../types/api";
 
 /** Manual payment endpoints (§7.7) from apps/payments. */
@@ -44,9 +45,14 @@ export function listPayments(slug: string, status: PaymentStatus | null, page = 
   return apiRequest(`${prefix(slug)}/payments/${suffix}`);
 }
 
+/** Complete list for workspace-wide search and status counts in the teacher UI. */
+export function listAllPayments(slug: string): Promise<PaymentSubmission[]> {
+  return fetchAllPages<PaymentSubmission>(`${prefix(slug)}/payments/`);
+}
+
 /** GET /payments/{id}/receipt/ — binary file served through the authorized endpoint. */
 export function paymentReceiptUrl(slug: string, paymentId: number): string {
-  return `/api/v1/${prefix(slug)}/payments/${paymentId}/receipt/`;
+  return `/api/v1${prefix(slug)}/payments/${paymentId}/receipt/`;
 }
 
 /** POST /payments/{id}/confirm/ — activates the enrollment in one transaction. */

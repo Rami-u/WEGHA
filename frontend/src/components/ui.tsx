@@ -58,9 +58,9 @@ export function Button({
 
 /* ---------- Form controls ---------- */
 
-export function Label({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
+export function Label({ children, htmlFor, className }: { children: ReactNode; htmlFor?: string; className?: string }) {
   return (
-    <label htmlFor={htmlFor} className="mb-1 block text-sm font-medium text-ink">
+    <label htmlFor={htmlFor} className={cn("mb-1 block text-sm font-medium text-ink", className)}>
       {children}
     </label>
   );

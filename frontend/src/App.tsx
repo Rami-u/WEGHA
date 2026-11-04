@@ -4,6 +4,7 @@ import { MainSiteLayout } from "./components/layout/MainSiteLayout";
 import { PublicWorkspaceLayout } from "./components/layout/PublicWorkspaceLayout";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { FullPageSpinner } from "./components/ui";
+import HomeButton from "./components/HomeButton";
 import { SessionProvider, useSession } from "./context/SessionContext";
 import { LandingPage } from "./features/main-site/LandingPage";
 import { NotFoundPage } from "./features/main-site/NotFoundPage";
@@ -17,12 +18,17 @@ import { ResetPasswordPage } from "./features/student/ResetPasswordPage";
 import { MyEnrollmentsPage } from "./features/student/dashboard/MyEnrollmentsPage";
 import { CourseDetailPage } from "./features/student/dashboard/CourseDetailPage";
 import { StudentCoursesPage } from "./features/student/dashboard/StudentCoursesPage";
+import { LessonViewPage } from "./features/course-content/LessonViewPage";
+import { StudentExamsPage } from "./features/course-content/StudentExamsPage";
+import { ExamPage } from "./features/course-content/ExamPage";
+import { TeacherCourseContentPage } from "./features/course-content/TeacherCourseContentPage";
 import { TeacherLoginPage } from "./features/teacher/LoginPage";
 import { TeacherSetPasswordPage } from "./features/teacher/SetPasswordPage";
 import { TeacherSettingsPage } from "./features/teacher/dashboard/SettingsPage";
 import { PaymentsReviewPage } from "./features/teacher/dashboard/PaymentsPage";
 import { TeacherCoursesPage } from "./features/teacher/dashboard/TeacherCoursesPage";
-import { StudentsReviewPage } from "./features/teacher/dashboard/StudentsPage";
+import { StudentsReviewPage } from "./features/teacher/dashboard/StudentPage";
+import { ProctoringReviewPage } from "./features/teacher/dashboard/ProctoringPage";
 import { RequireApprovedStudent, RequireAuth } from "./routes/guards";
 
 /**
@@ -61,6 +67,10 @@ function AppRoutes() {
             <Route element={<DashboardLayout />}>
               <Route path="/courses" element={<StudentCoursesPage />} />
               <Route path="/courses/:courseId" element={<CourseDetailPage />} />
+              {/* Course content: lessons/assets are still preview data, exams are real. */}
+              <Route path="/courses/:courseId/lessons/:lessonId" element={<LessonViewPage />} />
+              <Route path="/courses/:courseId/exams" element={<StudentExamsPage />} />
+              <Route path="/courses/:courseId/exams/:examId" element={<ExamPage />} />
             </Route>
             {/* Students-only pages */}
             <Route element={<RequireApprovedStudent />}>
@@ -73,6 +83,8 @@ function AppRoutes() {
               <Route element={<DashboardLayout />}>
                 <Route path="/teacher/students" element={<StudentsReviewPage />} />
                 <Route path="/teacher/courses" element={<TeacherCoursesPage />} />
+                <Route path="/teacher/courses/:courseId/content" element={<TeacherCourseContentPage />} />
+                <Route path="/teacher/proctoring" element={<ProctoringReviewPage />} />
                 <Route path="/teacher/payments" element={<PaymentsReviewPage />} />
                 <Route path="/teacher/settings" element={<TeacherSettingsPage />} />
               </Route>
@@ -120,8 +132,9 @@ function AppRoutes() {
 export default function App() {
   return (
     <SessionProvider>
-      <div className="min-h-screen">
+      <div className="min-h-screen pb-24">
         <AppRoutes />
+        <HomeButton />
       </div>
     </SessionProvider>
   );
