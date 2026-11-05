@@ -1,0 +1,58 @@
+/*
+  Scoped styling for the student course library (StudentCoursesPage).
+
+  Kept narrow on purpose: layout lives in the TSX with Tailwind utilities;
+  this file only handles the visuals Tailwind cannot express from the theme
+  tokens — the per-subject cover washes and the card chrome a library tile
+  needs to read differently from a plain Card.
+
+  Tone classes come from courseTileKey(): teal | blue | sand | purple. The
+  --tile-* palette is shared with CourseCover and switches with dark mode.
+*/
+
+/* The tile is a flush card: the cover strip has to reach its edges. */
+.library-course {
+  padding: 0;
+}
+
+.library-course .library-cover {
+  background:
+    linear-gradient(
+      140deg,
+      color-mix(in srgb, var(--tile-color) 45%, var(--surface-section)),
+      color-mix(in srgb, var(--tile-color) 12%, var(--surface-section))
+    );
+  color: var(--tile-fg);
+}
+
+.library-tone-teal .library-course .library-cover {
+  --tile-color: var(--tile-teal-bg);
+  --tile-fg: var(--tile-teal-fg);
+}
+
+.library-tone-blue .library-course .library-cover {
+  --tile-color: var(--tile-blue-bg);
+  --tile-fg: var(--tile-blue-fg);
+}
+
+.library-tone-sand .library-course .library-cover {
+  --tile-color: var(--tile-sand-bg);
+  --tile-fg: var(--tile-sand-fg);
+}
+
+.library-tone-purple .library-course .library-cover {
+  --tile-color: var(--tile-purple-bg);
+  --tile-fg: var(--tile-purple-fg);
+}
+
+/* The customer "featured course" banner uses the brand panel colors. */
+.library-featured {
+  background: var(--brand-panel);
+  color: var(--brand-panel-fg);
+  border-color: transparent;
+}
+
+/* Thin dividers between the three library statistics. */
+.library-stats > div + div {
+  border-inline-start: 1px solid var(--border-color);
+}

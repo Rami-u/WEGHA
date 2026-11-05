@@ -130,7 +130,17 @@ Set `DJANGO_ENABLE_API_DOCS=True` to enable `GET /api/schema/` and `GET /api/doc
 
 Suspended workspaces return `403` with `Workspace is unavailable.` on branding, workspace public-profile, and teacher workspace settings GET/PATCH routes; unknown slugs return `404` with `Workspace not found.`. The public teacher directory omits suspended workspaces and the public teacher profile returns `404`. Public serializers do not include email addresses, passwords, or student counts.
 
-In production, configure the web server to serve `/media/` from `backend/public_media`; Django serves these logos directly only in development.
+In production with a separate frontend host, configure the web server to serve `/media/` from `backend/public_media`; Django serves these logos directly only in development. In the single-origin mode below (`FRONTEND_DIST` set), Django serves `/media/` itself with `django.views.static.serve`, which is fine for a demo preview — for a hardened production deployment prefer a real web server in front of Django per `docs/deployment.md`.
+
+## Serving the React frontend in production (single origin)
+
+The React app living in `frontend/` is the product's public face. In production Django can serve the built bundle itself, so the API, admin, and UI run on one origin and no CORS configuration is needed:
+
+1. Build the frontend with the real domain: `cd frontend; VITE_PLATFORM_BASE_DOMAIN=<your-domain> npm run build`.
+2. Set `FRONTEND_DIST=frontend/dist` in `backend/.env`.
+3. Run `python manage.py collectstatic` (admin assets).
+
+Django then serves `/static/`, `/media/`, the hashed bundle files, and `index.html` for client-side routes — see `docs/deployment.md` ("Serving the React frontend") for the exact path table, DNS requirements, and the alternative separate-hosting shape. When `FRONTEND_DIST` is unset (the default), Django behaves exactly as before and non-API paths 404.
 
 ## Stage 5 courses, enrollment, and manual payments
 

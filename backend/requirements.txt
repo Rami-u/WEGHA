@@ -4,3 +4,6 @@ drf-spectacular==0.30.0
 psycopg[binary]==3.3.6
 django-environ==0.14.0
 Pillow==12.3.0
+mediapipe==1.2.0
+numpy==2.5.4
+opencv-python-headless==5.0.0.93

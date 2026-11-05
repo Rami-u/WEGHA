@@ -1,0 +1,20 @@
+.workspace-auth .workspace-auth-card {
+  padding: 1.5rem;
+}
+.workspace-auth-panel {
+  isolation: isolate;
+}
+.workspace-auth form input:disabled {
+  cursor: wait;
+}
+.workspace-home .workspace-welcome {
+  padding: 0;
+}
+.workspace-course summary::-webkit-details-marker {
+  display: none;
+}
+@media (min-width: 640px) {
+  .workspace-auth .workspace-auth-card {
+    padding: 2rem;
+  }
+}
